@@ -7,7 +7,6 @@ from Constants import API_KEY_DEEPL
 auth_key = API_KEY_DEEPL
 translator = deepl.Translator(auth_key)
 
-
 def translate_text(text, target_language):
     #translates text using DeepL API
     translation = translator.translate_text(text, target_lang=target_language)
@@ -27,6 +26,7 @@ def fetch_and_parse(url):
 if __name__ == "__main__":
     company_name=input("Enter the Company Name: ")
     url = input("Enter URL to Scrape and Translate: ")
+    source_language = input("Enter the current language: ")
     target_language = input("Enter Target Langauge: ") 
     
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
     site_content = soup.find('main') 
     headings = site_content.find_all(['h1','h2','h3', 'h4', 'h5', 'h6']) 
     paragraphs = site_content.find_all('p')
-    lists = site_content.find_all('li')
+    #lists = site_content.find_all('li')
 
 
     #initialize workbook and add a sheet
@@ -46,26 +46,33 @@ if __name__ == "__main__":
     worksheet = workbook.add_worksheet()
 
     #adds the Source language and target language to top of worksheet in columns A,B respectivly
-    worksheet.write(0, 0, 'English')
-    worksheet.write(0, 1, target_language)
+    worksheet.write('A1', source_language)
+    worksheet.write('B1', target_language)
 
     #sets the starting row/col for the worksheet
-    row = 1
-    col = 0
-
+    row = 2
+    source_column = 0
     #specifies the column where the translated content should go
     translation_column = 1
+    bold = workbook.add_format({'bold':True})
 
-    # for each heading in the list, write the source text in column A and the translated Text in column B of the worksheet
+    
+    worksheet.write(row, source_column, 'Headings:', bold)
+    row+=1
+    # for each heading in the list, write the source text in column A and the translated Text in column B of the worksheet  
     for h in headings:
         hstring = h.get_text().strip()
         if hstring == '':
             continue
         else:
-            worksheet.write(row, col, hstring)
+            worksheet.write(row, source_column, hstring)
             # h_translated = translate_text(hstring, target_language)
             # worksheet.write(row, translation_column, h_translated )
-            row = row + 1
+            row+=1
+
+    row+=1
+    worksheet.write(row, source_column, 'Paragraphs:', bold)
+    row+=1
 
     #for each Paragraph in the list, write the source text in column A and the translated Text in column B of the worksheet
     for p in paragraphs:
@@ -73,10 +80,10 @@ if __name__ == "__main__":
         if pstring == '':
             continue
         else:
-            worksheet.write(row, col, pstring)
+            worksheet.write(row, source_column, pstring)
             # p_translated = translate_text(pstring, target_language)
             # worksheet.write(row,translation_column,p_translated)
-            row = row + 1
+            row+=1
 
     #save the workbook
     workbook.close()
