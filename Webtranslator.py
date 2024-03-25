@@ -25,7 +25,10 @@ def fetch_and_parse(url):
 
 
 if __name__ == "__main__":
-    url = "https://tylerd-training.fareharbor.me/" # <--enter URL here
+    company_name=input("Enter the Company Name: ")
+    url = input("Enter URL to Scrape and Translate: ")
+    target_language = input("Enter Target Langauge: ") 
+    
 
     #parses the url into BeautifulSoup
     soup = fetch_and_parse(url) 
@@ -38,9 +41,9 @@ if __name__ == "__main__":
 
 
     #initialize workbook and add a sheet
-    workbook = xlsxwriter.Workbook('test.xlsx')
+
+    workbook = xlsxwriter.Workbook(company_name + ' - Translation Doc.xlsx')
     worksheet = workbook.add_worksheet()
-    target_language = 'fr' #<--- specifies target language
 
     #adds the Source language and target language to top of worksheet in columns A,B respectivly
     worksheet.write(0, 0, 'English')
@@ -60,8 +63,8 @@ if __name__ == "__main__":
             continue
         else:
             worksheet.write(row, col, hstring)
-            h_translated = translate_text(hstring, target_language)
-            worksheet.write(row, translation_column, h_translated )
+            # h_translated = translate_text(hstring, target_language)
+            # worksheet.write(row, translation_column, h_translated )
             row = row + 1
 
     #for each Paragraph in the list, write the source text in column A and the translated Text in column B of the worksheet
@@ -71,8 +74,8 @@ if __name__ == "__main__":
             continue
         else:
             worksheet.write(row, col, pstring)
-            p_translated = translate_text(pstring, target_language)
-            worksheet.write(row,translation_column,p_translated)
+            # p_translated = translate_text(pstring, target_language)
+            # worksheet.write(row,translation_column,p_translated)
             row = row + 1
 
     #save the workbook
