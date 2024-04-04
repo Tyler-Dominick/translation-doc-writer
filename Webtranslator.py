@@ -66,12 +66,7 @@ if __name__ == "__main__":
         else:    
             print('Working on: ' + url)
             
-            worksheet = workbook.add_worksheet()
-
-            #adds the Source language and target language to top of worksheet in columns A,B respectivly
-            worksheet.write('A1', url)
-            worksheet.write('A2', source_language)
-            worksheet.write('B2', target_language)
+           
             
             
             #sets the starting row/col for the worksheet
@@ -81,6 +76,16 @@ if __name__ == "__main__":
             translation_column = 1
             
             soup = fetch_and_parse(url) 
+            title = soup.find('title').get_text().strip()
+            if len(title) <= 31:
+                worksheet = workbook.add_worksheet(title)
+            else:
+                worksheet = workbook.add_worksheet(title[0:30])
+
+            #adds the Source language and target language to top of worksheet in columns A,B respectivly
+            worksheet.write('A1', url)
+            worksheet.write('A2', source_language)
+            worksheet.write('B2', target_language)
 
             #finds everything in <main> of HTML file and adds the content to appropriate variables
             site_content = soup.find('main') 
@@ -97,8 +102,8 @@ if __name__ == "__main__":
                     continue
                 else:
                     worksheet.write(row, source_column, hstring)
-                    h_translated = translate_text(hstring, target_language)
-                    worksheet.write(row, translation_column, h_translated )
+                    # h_translated = translate_text(hstring, target_language)
+                    # worksheet.write(row, translation_column, h_translated )
                     row+=1
 
             row+=1
@@ -112,8 +117,8 @@ if __name__ == "__main__":
                     continue
                 else:
                     worksheet.write(row, source_column, pstring)
-                    p_translated = translate_text(pstring, target_language)
-                    worksheet.write(row,translation_column,p_translated)
+                    # p_translated = translate_text(pstring, target_language)
+                    # worksheet.write(row,translation_column,p_translated)
                     row+=1
 
     #save the workbook
