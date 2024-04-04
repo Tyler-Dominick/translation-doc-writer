@@ -46,12 +46,13 @@ def get_all_urls(base_url):
 if __name__ == "__main__":
     company_name=input("Enter the Company Name: ")
     url = input("Enter URL to Scrape and Translate: ")
+    url_len = len(url);
     source_language = input("Enter the current language: ")
     target_language = input("Enter Target Langauge: ") 
     print("Running...")
     all_urls = get_all_urls(url)
-    ignored_urls = {(url + "disclaimer/"), (url + "privacy-statement-us/"), (url + "privacy-policy/"), (url + "opt-out-prefences/")}
-       
+    ignored_urls = {(url + "disclaimer/"), (url + "privacy-statement-us/"), (url + "privacy-policy/"), (url + "opt-out-preferences/"), (url + target_language +"/"), (url + "blog/")}
+    
     #initialize workbook and add a sheet
     workbook = xlsxwriter.Workbook(company_name + ' - Translation Doc.xlsx')
     bold = workbook.add_format({'bold':True})
@@ -60,17 +61,21 @@ if __name__ == "__main__":
     for url in all_urls:
         if (url in ignored_urls):
             continue
+        elif(url[0:url_len+3] in ignored_urls):
+            continue
         else:    
             print('Working on: ' + url)
             
             worksheet = workbook.add_worksheet()
 
             #adds the Source language and target language to top of worksheet in columns A,B respectivly
-            worksheet.write('A1', source_language)
-            worksheet.write('B1', target_language)
+            worksheet.write('A1', url)
+            worksheet.write('A2', source_language)
+            worksheet.write('B2', target_language)
+            
             
             #sets the starting row/col for the worksheet
-            row = 2
+            row = 3
             source_column = 0
             #specifies the column where the translated content should go
             translation_column = 1
@@ -92,8 +97,8 @@ if __name__ == "__main__":
                     continue
                 else:
                     worksheet.write(row, source_column, hstring)
-                    # h_translated = translate_text(hstring, target_language)
-                    # worksheet.write(row, translation_column, h_translated )
+                    h_translated = translate_text(hstring, target_language)
+                    worksheet.write(row, translation_column, h_translated )
                     row+=1
 
             row+=1
@@ -107,8 +112,8 @@ if __name__ == "__main__":
                     continue
                 else:
                     worksheet.write(row, source_column, pstring)
-                    # p_translated = translate_text(pstring, target_language)
-                    # worksheet.write(row,translation_column,p_translated)
+                    p_translated = translate_text(pstring, target_language)
+                    worksheet.write(row,translation_column,p_translated)
                     row+=1
 
     #save the workbook
