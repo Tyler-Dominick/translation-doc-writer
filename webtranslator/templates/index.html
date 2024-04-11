@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    <title>Translation Doc Creator</title>
+{% endblock %}
+
+{% block body %}
+    <h1>Translation doc creator</h1>
+    <div class ="content-section"> 
+        <form action="" method="POST">
+            {{ form.hidden_tag() }}
+            <fieldset class = "form-group">
+                <legend class = "border-bottom mb-4">Submit Url</legend>
+                <div class="form-group">
+                    {{ form.url.label(class="form-control-label")}}
+                    {{ form.url(class="form-control form-control-lg")}}
+                </div>
+            </fieldset>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary")}}
+            </div>
+        </form>
+    </div>
+    
+{% endblock %}
