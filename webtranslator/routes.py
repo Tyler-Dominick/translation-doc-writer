@@ -50,10 +50,6 @@ def download_link(filename):
    permitted_directory='/Users/tdominick/Documents/GitHub/translation-doc-writer'
    return send_from_directory(directory=permitted_directory, path=filename, as_attachment=True)
 
-
-
-
-
 def clear_data(session):
     meta = db.metadata
     for table in reversed(meta.sorted_tables):
