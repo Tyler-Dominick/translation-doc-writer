@@ -1,7 +1,7 @@
 from flask import render_template,flash, redirect, send_from_directory
 from webtranslator import app, db
 from webtranslator.forms import InputForm, TranslateForm
-from webtranslator.translator import get_all_urls, create_translation_doc
+from webtranslator.translator import get_all_urls, create_translation_doc, get_title
 from webtranslator.models import Webtranslation
 import os
 
@@ -15,7 +15,8 @@ def index():
         i=1
         urls = get_all_urls(form.url.data)
         for u in urls:
-            url_element = Webtranslation(url_num=i,address = u)
+            title = get_title(u)
+            url_element = Webtranslation(url_num=i,address = u, title=title)
             db.session.add(url_element)
             i+=1
         db.session.commit()

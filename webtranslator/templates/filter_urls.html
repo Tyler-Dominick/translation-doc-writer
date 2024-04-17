@@ -11,6 +11,7 @@
             <tr>
                 <th scope="col">Url #</th>
                 <th scope="col">Url</th>
+                <th scope="col">Title</th>
                 <th scope="col">Exclude?</th>
             </tr>
             {% for url in urls %}
@@ -20,6 +21,9 @@
                 </td>
                 <td> 
                     <a href="{{ url.address }}" target="blank"> {{url.address}}</a> 
+                </td>
+                <td>
+                    {{url.title}}
                 </td>
                 <td> 
                     <a class="btn btn-danger" href="/exclude_url/{{ url.url_num }}">Exclude</a>

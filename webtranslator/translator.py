@@ -20,12 +20,18 @@ def fetch_and_parse(url):
     soup = BeautifulSoup(html_content, 'lxml')
     return soup
 
+def get_title(url):
+    response = requests.get(url)
+    html_content = response.text
+    soup = BeautifulSoup(html_content, 'lxml')
+    return soup.find('title').get_text().strip()
+
+
 def get_all_urls(base_url):
     resp = requests.get(base_url + 'sitemap.xml')
     soup = BeautifulSoup(resp.content, 'xml')
     site_maps = soup.findAll('sitemap')
     
-
     out = set()
 
     for site_map in site_maps:
