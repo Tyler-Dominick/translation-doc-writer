@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests  
 import xlsxwriter
 import deepl
-from webtranslator.Constants import API_KEY_DEEPL
+
 
 auth_key = API_KEY_DEEPL
 translator = deepl.Translator(auth_key)
