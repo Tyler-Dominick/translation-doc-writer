@@ -2,9 +2,10 @@ from bs4 import BeautifulSoup
 import requests  
 import xlsxwriter
 import deepl
+import os
 
 
-auth_key = API_KEY_DEEPL
+auth_key = os.environ.get('API_KEY_DEEPL')
 translator = deepl.Translator(auth_key)
 
 def translate_text(text, target_language):
