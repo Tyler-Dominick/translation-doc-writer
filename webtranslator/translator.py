@@ -20,14 +20,18 @@ def fetch_and_parse(url):
     soup = BeautifulSoup(html_content, 'lxml')
     return soup
 
+
 def get_title(url):
+    # gets the title tag for the filter urls page
     response = requests.get(url)
     html_content = response.text
     soup = BeautifulSoup(html_content, 'lxml')
     return soup.find('title').get_text().strip()
 
 
-def get_all_urls(base_url):
+def get_all_urls(base_url, ignored_urls):
+    # takes an input url and a list of ignored urls related to ComplianZ and blogs 
+    # returns a set of all urls listed in sitemaps
     resp = requests.get(base_url + 'sitemap.xml')
     soup = BeautifulSoup(resp.content, 'xml')
     site_maps = soup.findAll('sitemap')
@@ -44,19 +48,13 @@ def get_all_urls(base_url):
             urls = sitemap_soup.findAll('url')
             for u in urls:
                 loc = u.find('loc').string
-                out.add(loc)
+                if loc not in ignored_urls:
+                    out.add(loc)
+                else:
+                    continue
     return out
 
 
-if __name__ == "__main__":
-    company_name=input("Enter the Company Name: ")
-    url = input("Enter URL to Scrape and Translate: ")
-    url_len = len(url)
-    source_language = input("Enter the current language: ")
-    target_language = input("Enter Target Langauge: ") 
-    print("Running...")
-    all_urls = get_all_urls(url)
-    ignored_urls = {(url + "disclaimer/"), (url + "privacy-statement-us/"), (url + "privacy-policy/"), (url + "opt-out-preferences/"), (url + "blog/")}
     
 def create_translation_doc(company_name, all_urls, source_language, target_language):
     #initialize workbook and add a sheet
@@ -64,9 +62,9 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
     bold = workbook.add_format({'bold':True})
     title_set=set()
     title_error_counter = 0
+
     #parses the url into BeautifulSoup
     for url in all_urls:
-            
             
             #sets the starting row/col for the worksheet
             row = 3
@@ -78,6 +76,7 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
             title = soup.find('title').get_text().strip()
             print('Working on: ' + title)
             
+            #handles errors with worksheet titles not allowing cerrtain characters or being too long
             if len(title) >= 31:
                 title=title[0:30]
             else:
