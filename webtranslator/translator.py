@@ -6,7 +6,7 @@ import os
 
 
 auth_key = os.environ.get('API_KEY_DEEPL')
-translator = deepl.Translator(auth_key)
+translator = deepl.Translator("165e828f-f651-4734-9d79-de0f425cc29e:fx")
 
 def translate_text(text, target_language):
     #translates text using DeepL API
