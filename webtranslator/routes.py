@@ -5,6 +5,7 @@ from webtranslator.translator import get_all_urls, create_translation_doc, get_t
 from webtranslator.models import Webtranslation
 import datetime
 import os
+import logging
 
 
 
@@ -26,23 +27,25 @@ def index():
             url_element = Webtranslation(session_id=session_id,url_num=hash(u + str(datetime.datetime.now())),address = u, title=title)
             db.session.add(url_element)
         db.session.commit()
-        urls = Webtranslation.query(Webtranslation).filter_by(session_id = session_id)
+        urls = Webtranslation.query().filter(Webtranslation.session_id == session_id)
+        for u in urls:
+            logging.debug(u)
         form = TranslateForm()
         return redirect(url_for('filter_urls', sessionid=session_id))
-    urls = Webtranslation.query(Webtranslation).filter_by(session_id = session_id)
+    urls = Webtranslation.query().filter(Webtranslation.session_id == session_id)
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
 @app.route('/filter_urls/', methods=['GET','POST'])
 def filter_urls():
     session_id=request.args.get('session_id')
-    urls = Webtranslation.query(Webtranslation).filter_by(session_id = session_id)
+    urls = Webtranslation.query().filter(Webtranslation.session_id == session_id)
     form = TranslateForm()
     if form.validate_on_submit():
         company_name=form.company_name.data
         source_lang=form.source_lang.data
         target_lang=form.target_lang.data
-        urls = Webtranslation.query(Webtranslation).filter_by(session_id = session_id)
+        urls = Webtranslation.query().filter(Webtranslation.session_id == session_id)
         workbook = create_translation_doc(company_name=company_name, all_urls=urls, source_language=source_lang, target_language=target_lang)
         return render_template('success.html', workbook=workbook)
     return render_template('filter_urls.html', urls=urls, form=form)
