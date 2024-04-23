@@ -59,7 +59,7 @@ def get_all_urls(base_url, ignored_urls):
     
 def create_translation_doc(company_name, all_urls, source_language, target_language):
     #initialize workbook and add a sheet
-    workbook = xlsxwriter.Workbook('/tmp/' + company_name + ' - Translation Doc.xlsx', {'tmpdir': '/tmp/'})
+    workbook = xlsxwriter.Workbook('/tmp/' + company_name + ' - Translation Doc.xlsx')
     bold = workbook.add_format({'bold':True})
     title_set=set()
     title_error_counter = 0
