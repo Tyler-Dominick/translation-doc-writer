@@ -45,7 +45,7 @@ def filter_urls():
     return render_template('filter_urls.html', urls=urls, form=form)
 
 # Exlcude URL route. Removes the url from the db and redirects back to filter urls
-@app.route('/exclude_url/<int:url_num>')
+@app.route('/exclude_url/<url_num>')
 def exclude_url(url_num):
     url_to_delete = Webtranslation.query.get_or_404(url_num)
     db.session.delete(url_to_delete)
