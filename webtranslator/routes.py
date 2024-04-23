@@ -25,12 +25,11 @@ def index():
             title = get_title(u)
             url_element = Webtranslation(session_id=session_id,url_num=hash(u + str(datetime.datetime.now())),address = u, title=title)
             db.session.add(url_element)
-            i+=1
         db.session.commit()
-        urls = Webtranslation.query.filter(session_id==session_id)
+        urls = Webtranslation.query.filter(Webtranslation.session_id==session_id)
         form = TranslateForm()
         return redirect(url_for('filter_urls', sessionid=session_id))
-    urls = Webtranslation.query.filter(session_id==session_id)
+    urls = Webtranslation.query.filter(Webtranslation.session_id==session_id)
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
