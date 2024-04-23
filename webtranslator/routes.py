@@ -22,7 +22,7 @@ def index():
         session_id = hash(form.url.data)
         for u in urls:
             title = get_title(u)
-            url_element = Webtranslation(session_id=session_id,url_num=hash(u + str(datetime.datetime.now)),address = u, title=title)
+            url_element = Webtranslation(session_id=session_id,url_num=hash(u + str(datetime.datetime.now())),address = u, title=title)
             db.session.add(url_element)
             i+=1
         db.session.commit()
