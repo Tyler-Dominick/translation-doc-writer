@@ -66,6 +66,7 @@ def exclude_url(url_num):
 @app.route('/download_link/', methods=['GET', 'POST'])
 def download_link():
    filename=request.args.get('workbook')
+   print(filename)
    permitted_directory='/tmp/'
    return send_from_directory(directory=permitted_directory, path=filename, as_attachment=True)
 
