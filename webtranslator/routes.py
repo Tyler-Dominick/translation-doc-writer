@@ -3,6 +3,7 @@ from webtranslator import app, db
 from webtranslator.forms import InputForm, TranslateForm
 from webtranslator.translator import get_all_urls, create_translation_doc, get_title
 from webtranslator.models import Webtranslation
+import datetime
 import os
 
 
@@ -19,7 +20,7 @@ def index():
         urls = get_all_urls(form.url.data, ignored_urls)
         for u in urls:
             title = get_title(u)
-            url_element = Webtranslation(url_num=i,address = u, title=title)
+            url_element = Webtranslation(url_num=hash(u + str(datetime.datetime.now)),address = u, title=title)
             db.session.add(url_element)
             i+=1
         db.session.commit()
