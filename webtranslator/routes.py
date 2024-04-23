@@ -1,10 +1,11 @@
-from flask import render_template,flash, redirect, send_from_directory, url_for
+from flask import render_template,flash, redirect, send_from_directory, url_for, request
 from webtranslator import app, db
 from webtranslator.forms import InputForm, TranslateForm
 from webtranslator.translator import get_all_urls, create_translation_doc, get_title
 from webtranslator.models import Webtranslation
 import datetime
 import os
+
 
 
 # Homepage route
@@ -33,8 +34,9 @@ def index():
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
-@app.route('/filter_urls/<string:session_id>', methods=['GET','POST'])
-def filter_urls(session_id):
+@app.route('/filter_urls/', methods=['GET','POST'])
+def filter_urls():
+    session_id=request.args.get(session_id)
     urls = Webtranslation.query.filter(session_id==session_id)
     form = TranslateForm()
     if form.validate_on_submit():
