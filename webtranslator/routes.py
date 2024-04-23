@@ -32,7 +32,7 @@ def index():
             logging.debug(u)
         form = TranslateForm()
         return redirect(url_for('filter_urls', sessionid=session_id))
-    urls = Webtranslation.query().filter(Webtranslation.session_id == session_id)
+    urls = Webtranslation.query().filter(session_id == session_id)
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
