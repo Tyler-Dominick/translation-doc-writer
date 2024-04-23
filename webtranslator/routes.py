@@ -67,7 +67,7 @@ def exclude_url(url_num):
 def download_link():
    filename=request.args.get('workbook')
    print(filename)
-   permitted_directory='/tmp/'
+   permitted_directory='/'
    return send_from_directory(directory=permitted_directory, path=filename, as_attachment=True)
 
 # def clear_data(session):
