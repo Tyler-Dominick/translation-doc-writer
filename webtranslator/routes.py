@@ -163,7 +163,7 @@ def filter_urls():
         csv_data = output.getvalue()
         print(csv_data)
         print("Run successful!")
-        send_file(csv_data, 'csv', as_attachment=True, filename_or_fp=company_name)
+        send_file(csv_data, 'csv', attachment_filename=company_name, as_attachment=True,)
         return (render_template('success.html', workbook=workbook))
     return render_template('filter_urls.html', urls=urls, form=form)
 
