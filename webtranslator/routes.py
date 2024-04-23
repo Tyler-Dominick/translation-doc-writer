@@ -26,7 +26,7 @@ def index():
             db.session.add(url_element)
             i+=1
         db.session.commit()
-        urls = Webtranslation.query.get(session_id)
+        urls = Webtranslation.query.filter(session_id==session_id)
         form = TranslateForm()
         return render_template('filter_urls.html', urls=urls, form=form)
     urls = Webtranslation.query.filter(session_id==session_id)
