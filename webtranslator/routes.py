@@ -26,17 +26,17 @@ def index():
             url_element = Webtranslation(session_id=session_id,url_num=hash(u + str(datetime.datetime.now())),address = u, title=title)
             db.session.add(url_element)
         db.session.commit()
-        urls = Webtranslation.query.filter(Webtranslation.session_id==session_id)
+        urls = Webtranslation.query.filter_by(session_id=session_id)
         form = TranslateForm()
         return redirect(url_for('filter_urls', sessionid=session_id))
-    urls = Webtranslation.query.filter(Webtranslation.session_id==session_id)
+    urls = Webtranslation.query.filter_by(session_id = session_id)
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
 @app.route('/filter_urls/', methods=['GET','POST'])
 def filter_urls():
     session_id=request.args.get('session_id')
-    urls = Webtranslation.query.filter(Webtranslation.session_id==session_id)
+    urls = Webtranslation.query.filter_by(session_id = session_id)
     form = TranslateForm()
     if form.validate_on_submit():
         company_name=form.company_name.data
