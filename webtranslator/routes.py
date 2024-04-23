@@ -163,7 +163,8 @@ def filter_urls():
         # csv_data = output.getvalue()
         print(output)
         print("Run successful!")
-        return send_file(output, download_name='test.xlsx', as_attachment=True)
+        output.seek(0)
+        return send_file(output, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', download_name='test.xlsx', as_attachment=True)
         # return (render_template('success.html', workbook=workbook))
     return render_template('filter_urls.html', urls=urls, form=form)
 
