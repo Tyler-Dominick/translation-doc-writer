@@ -32,7 +32,7 @@ def index():
         for u in urls:
             print(u)
         form = TranslateForm()
-        return redirect(url_for('filter_urls', sessionid=session_id))
+        return redirect(url_for('filter_urls', session_id=session_id))
     urls = Webtranslation.query.filter(session_id == session_id)
     return render_template('index.html', form = form, urls = urls)
 
