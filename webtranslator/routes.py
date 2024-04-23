@@ -163,8 +163,8 @@ def filter_urls():
         csv_data = output.getvalue()
         print(csv_data)
         print("Run successful!")
-        send_file(csv_data,mimetype='application/vnd.ms-excel', download_name='test.xlsx', as_attachment=True,)
-        return (render_template('success.html', workbook=workbook))
+        return send_file(csv_data,mimetype='application/vnd.ms-excel', download_name='test.xlsx', as_attachment=True,)
+        # return (render_template('success.html', workbook=workbook))
     return render_template('filter_urls.html', urls=urls, form=form)
 
 # Exlcude URL route. Removes the url from the db and redirects back to filter urls
