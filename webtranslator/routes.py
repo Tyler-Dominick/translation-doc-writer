@@ -9,7 +9,7 @@ import os
 # Homepage route
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    # clear_data(db)
+    clear_data(db)
     # clears the db on each run. probably should find a better solution. used for testing. 
     form = InputForm()
     if form.validate_on_submit():
@@ -57,10 +57,10 @@ def download_link(filename):
    permitted_directory='/Users/tdominick/Documents/GitHub/translation-doc-writer'
    return send_from_directory(directory=permitted_directory, path=filename, as_attachment=True)
 
-# def clear_data(session):
-#     # clears the db 
-#     meta = db.metadata
-#     for table in reversed(meta.sorted_tables):
-#         print ('Clear table %s' % table)
-#         session.execute(table.delete())
-#     session.commit()
+def clear_data(session):
+    # clears the db 
+    meta = db.metadata
+    for table in reversed(meta.sorted_tables):
+        print ('Clear table %s' % table)
+        session.execute(table.delete())
+    session.commit()
