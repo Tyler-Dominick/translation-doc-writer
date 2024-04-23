@@ -13,21 +13,23 @@ def index():
     # clear_data(db)
     # clears the db on each run. probably should find a better solution. used for testing. 
     form = InputForm()
+    session_id = 1
     if form.validate_on_submit():
         i=1
         main_url = form.url.data
         ignored_urls = {(main_url + "disclaimer/"), (main_url + "privacy-statement-us/"), (main_url + "privacy-policy/"), (main_url + "opt-out-preferences/"), (main_url + "blog/")}
         urls = get_all_urls(form.url.data, ignored_urls)
+        session_id = hash(form.url.data)
         for u in urls:
             title = get_title(u)
-            url_element = Webtranslation(url_num=hash(u + str(datetime.datetime.now)),address = u, title=title)
+            url_element = Webtranslation(session_id=session_id,url_num=hash(u + str(datetime.datetime.now)),address = u, title=title)
             db.session.add(url_element)
             i+=1
         db.session.commit()
-        urls = Webtranslation.query.all()
+        urls = Webtranslation.query.all(session_id)
         form = TranslateForm()
         return render_template('filter_urls.html', urls=urls, form=form)
-    urls = Webtranslation.query.all()
+    urls = Webtranslation.query.all(session_id)
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
