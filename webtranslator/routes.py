@@ -28,9 +28,9 @@ def index():
             db.session.add(url_element)
         db.session.commit()
         urls = Webtranslation.query.filter(Webtranslation.session_id == session_id)
-        logging.debug(session_id)
+        print(session_id)
         for u in urls:
-            logging.debug(u)
+            print(u)
         form = TranslateForm()
         return redirect(url_for('filter_urls', sessionid=session_id))
     urls = Webtranslation.query.filter(session_id == session_id)
