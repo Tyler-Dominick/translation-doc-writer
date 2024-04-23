@@ -36,6 +36,9 @@ def index():
     urls = Webtranslation.query.filter(session_id == session_id)
     return render_template('index.html', form = form, urls = urls)
 
+
+#test
+
 # Filter URLS route 
 @app.route('/filter_urls/', methods=['GET','POST'])
 def filter_urls():
