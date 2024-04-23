@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import psycopg2
+# import psycopg2
 
 POSTGRES_URL="postgresql://default:wEa1GZcD3Llh@ep-misty-voice-a4o0ylno-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require"
 POSTGRES_PRISMA_URL="postgres://default:wEa1GZcD3Llh@ep-misty-voice-a4o0ylno-pooler.us-east-1.aws.neon.tech:5432/verceldb?sslmode=require&pgbouncer=true&connect_timeout=15"
