@@ -1,4 +1,4 @@
-from flask import render_template,flash, redirect, send_from_directory, url_for, request
+from flask import render_template,flash, redirect, send_from_directory, url_for, request, send_file
 from webtranslator import app, db
 from webtranslator.forms import InputForm, TranslateForm
 from webtranslator.translator import *
@@ -8,7 +8,7 @@ import xlsxwriter
 import io
 
 
-
+BLOB_READ_WRITE_TOKEN="vercel_blob_rw_RlT6FwUAO3UM0rQu_GsqGAQikcgCBFjqVgXSdxFUSn47lxA"
 
 # Homepage route
 @app.route('/', methods=['GET', 'POST'])
@@ -163,7 +163,8 @@ def filter_urls():
         csv_data = output.getvalue()
         print(csv_data)
         print("Run successful!")
-        return workbook
+        send_file(csv_data)
+        return (render_template('success.html', workbook=workbook))
     return render_template('filter_urls.html', urls=urls, form=form)
 
 # Exlcude URL route. Removes the url from the db and redirects back to filter urls
