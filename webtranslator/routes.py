@@ -1,4 +1,4 @@
-from flask import render_template,flash, redirect, send_from_directory
+from flask import render_template,flash, redirect, send_from_directory, url_for
 from webtranslator import app, db
 from webtranslator.forms import InputForm, TranslateForm
 from webtranslator.translator import get_all_urls, create_translation_doc, get_title
@@ -28,12 +28,12 @@ def index():
         db.session.commit()
         urls = Webtranslation.query.filter(session_id==session_id)
         form = TranslateForm()
-        return redirect('/filter_urls/' + session_id)
+        return redirect(url_for('filter_urls', sessionid=session_id))
     urls = Webtranslation.query.filter(session_id==session_id)
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
-@app.route('/filter_urls/<session_id>', methods=['GET','POST'])
+@app.route('/filter_urls/{session_id}', methods=['GET','POST'])
 def filter_urls(session_id):
     urls = Webtranslation.query.filter(session_id==session_id)
     form = TranslateForm()
