@@ -51,7 +51,7 @@ def filter_urls():
         target_lang=form.target_lang.data
         urls = Webtranslation.query.filter(Webtranslation.session_id == session_id)
         workbook = create_translation_doc(company_name=company_name, all_urls=urls, source_language=source_lang, target_language=target_lang)
-        return render_template('success.html', workbook=workbook)
+        return render_template('/download_link', workbook=workbook.filename)
     return render_template('filter_urls.html', urls=urls, form=form)
 
 # Exlcude URL route. Removes the url from the db and redirects back to filter urls
@@ -63,9 +63,10 @@ def exclude_url(url_num):
     return redirect('/filter_urls')
 
 # Route for download page
-@app.route('/download_link/<path:filename>', methods=['GET', 'POST'])
-def download_link(filename):
-   permitted_directory='/Users/tdominick/Documents/GitHub/translation-doc-writer'
+@app.route('/download_link/', methods=['GET', 'POST'])
+def download_link():
+   filename=request.args.get('workbook')
+   permitted_directory='/tmp/'
    return send_from_directory(directory=permitted_directory, path=filename, as_attachment=True)
 
 # def clear_data(session):

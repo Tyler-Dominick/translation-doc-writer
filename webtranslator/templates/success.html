@@ -7,7 +7,7 @@
 {% block body %}
     <h1>Translation Doc Created Successfully</h1>
     <div class ="content-section"> 
-        <a class="btn btn-primary" href="/download_link/{{workbook.filename}}" download>Download</a>
+        <a class="btn btn-primary" href="{{url_for('download_link', workbook=workbook)}}" download>Download</a>
     </div>
     
 {% endblock %}
