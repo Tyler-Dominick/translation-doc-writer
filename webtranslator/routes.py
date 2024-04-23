@@ -33,7 +33,7 @@ def index():
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
-@app.route('/filter_urls/<long:session_id>', methods=['GET','POST'])
+@app.route('/filter_urls/<session_id>', methods=['GET','POST'])
 def filter_urls(session_id):
     urls = Webtranslation.query.filter(session_id==session_id)
     form = TranslateForm()
