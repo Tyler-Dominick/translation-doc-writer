@@ -28,14 +28,14 @@ def index():
         db.session.commit()
         urls = Webtranslation.query.filter(session_id==session_id)
         form = TranslateForm()
-        return render_template('filter_urls.html', urls=urls, form=form)
+        return render_template('filter_urls.html', urls=urls, form=form, session_id=session_id)
     urls = Webtranslation.query.filter(session_id==session_id)
     return render_template('index.html', form = form, urls = urls)
 
 # Filter URLS route 
-@app.route('/filter_urls', methods=['GET','POST'])
-def filter_urls():
-    urls = Webtranslation.query.all()
+@app.route('/filter_urls/<long:session_id>', methods=['GET','POST'])
+def filter_urls(session_id):
+    urls = Webtranslation.query.filter(session_id==session_id)
     form = TranslateForm()
     if form.validate_on_submit():
         company_name=form.company_name.data
