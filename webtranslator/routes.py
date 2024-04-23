@@ -51,7 +51,7 @@ def filter_urls():
         target_lang=form.target_lang.data
         urls = Webtranslation.query.filter(Webtranslation.session_id == session_id)
         workbook = create_translation_doc(company_name=company_name, all_urls=urls, source_language=source_lang, target_language=target_lang)
-        return render_template('/download_link', workbook=workbook.filename)
+        return render_template('success.html', workbook=workbook.filename)
     return render_template('filter_urls.html', urls=urls, form=form)
 
 # Exlcude URL route. Removes the url from the db and redirects back to filter urls
