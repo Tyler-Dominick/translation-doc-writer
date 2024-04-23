@@ -28,6 +28,7 @@ def index():
             db.session.add(url_element)
         db.session.commit()
         urls = Webtranslation.query.filter(Webtranslation.session_id == session_id)
+        logging.debug(session_id)
         for u in urls:
             logging.debug(u)
         form = TranslateForm()
