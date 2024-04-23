@@ -36,7 +36,7 @@ def index():
 # Filter URLS route 
 @app.route('/filter_urls/', methods=['GET','POST'])
 def filter_urls():
-    session_id=request.args.get(session_id)
+    session_id=request.args.get('session_id')
     urls = Webtranslation.query.filter(session_id==session_id)
     form = TranslateForm()
     if form.validate_on_submit():
