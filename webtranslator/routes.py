@@ -175,7 +175,7 @@ def exclude_url(url_num):
     session = url_to_delete.session_id
     db.session.delete(url_to_delete)
     db.session.commit()
-    return redirect('/filter_urls', session_id=session)
+    return redirect(url_for('filter_urls', session_id=session))
 
 # Route for download page
 @app.route('/download_link/', methods=['GET', 'POST'])
