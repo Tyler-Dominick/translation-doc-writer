@@ -40,7 +40,10 @@ def index():
 @app.route('/filter_urls/', methods=['GET','POST'])
 def filter_urls():
     session_id=request.args.get('session_id')
+    print(session_id)
     urls = Webtranslation.query.filter(Webtranslation.session_id == session_id)
+    for u in urls:
+        print(u)
     form = TranslateForm()
     if form.validate_on_submit():
         company_name=form.company_name.data
