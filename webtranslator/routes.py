@@ -1,11 +1,12 @@
 from flask import render_template,flash, redirect, send_from_directory, url_for, request
 from webtranslator import app, db
 from webtranslator.forms import InputForm, TranslateForm
-from webtranslator.translator import get_all_urls, create_translation_doc, get_title
+from webtranslator.translator import *
 from webtranslator.models import Webtranslation
 import datetime
-import os
-import logging
+import xlsxwriter
+import io
+
 
 
 
@@ -37,8 +38,6 @@ def index():
     return render_template('index.html', form = form, urls = urls)
 
 
-#test
-
 # Filter URLS route 
 @app.route('/filter_urls/', methods=['GET','POST'])
 def filter_urls():
@@ -53,7 +52,117 @@ def filter_urls():
         source_lang=form.source_lang.data
         target_lang=form.target_lang.data
         urls = Webtranslation.query.filter(Webtranslation.session_id == session_id)
-        workbook = create_translation_doc(company_name=company_name, all_urls=urls, source_language=source_lang, target_language=target_lang)
+        # workbook = create_translation_doc(company_name=company_name, all_urls=urls, source_language=source_lang, target_language=target_lang)
+        output = io.BytesIO()
+        workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+        bold = workbook.add_format({'bold':True})
+        title_set=set()
+        title_error_counter = 0
+
+        #parses the url into BeautifulSoup
+        for url in urls:
+                
+                #sets the starting row/col for the worksheet
+                row = 3
+                source_column = 0
+                #specifies the column where the translated content should go
+                translation_column = 1
+                
+                soup = fetch_and_parse(url) 
+                title = soup.find('title').get_text().strip()
+                print('Working on: ' + title)
+                
+                #handles errors with worksheet titles not allowing cerrtain characters or being too long
+                if len(title) >= 31:
+                    title=title[0:30]
+                else:
+                    pass
+
+                if (':' in title) or ('/' in title):
+                    title_error_counter += 1
+                    title = "title error " + str(title_error_counter)  
+                else:
+                    pass
+
+                if title in title_set:
+                    title_error_counter += 1
+                    title = "Duplicate title Error" + str(title_error_counter) 
+                else: 
+                    pass
+
+                title_set.add(title)
+                print(title)
+                worksheet = workbook.add_worksheet(title)
+
+
+                #adds the Source language and target language to top of worksheet in columns A,B respectivly
+                worksheet.write('A1', url.address)
+                worksheet.write('A2', source_lang)
+                worksheet.write('B2', target_lang)
+
+                #finds everything in <main> of HTML file and adds the content to appropriate variables
+                site_content = soup.find('main') 
+                headings = site_content.find_all(['h1','h2','h3', 'h4', 'h5', 'h6']) 
+                paragraphs = site_content.find_all('p')
+                lists = site_content.find_all('li')
+
+                worksheet.write(row, source_column, 'Headings:', bold)
+                row+=1
+                # for each heading in the list, write the source text in column A and the translated Text in column B of the worksheet  
+                for h in headings:
+                    hstring = h.get_text().strip()
+                    if hstring == '':
+                        continue
+                    else:
+                        worksheet.write(row, source_column, hstring)
+                        if(source_lang==target_lang):
+                            continue
+                        else:
+                            h_translated = translate_text(hstring, target_lang)
+                            worksheet.write(row, translation_column, h_translated )
+                        row+=1
+
+                row+=1
+                worksheet.write(row, source_column, 'Paragraphs:', bold)
+                row+=1
+
+                #for each Paragraph in the list, write the source text in column A and the translated Text in column B of the worksheet
+                for p in paragraphs:
+                    pstring = p.get_text().strip()
+                    if pstring == '':
+                        continue
+                    else:
+                        worksheet.write(row, source_column, pstring)
+                        if(source_lang==target_lang):
+                            continue
+                        else:
+                            p_translated = translate_text(pstring, target_lang)
+                            worksheet.write(row,translation_column,p_translated)
+                        row+=1
+
+                row+=1
+                worksheet.write(row, source_column, 'List Elements:', bold)
+                row+=1
+                #for each list element in the list, write the source text in column A and the translated Text in column B of the worksheet
+                for l in lists:
+                    lstring = l.get_text().strip()
+                    if lstring == '':
+                        continue
+                    else:
+                        worksheet.write(row, source_column, lstring)
+                        if(source_lang==target_lang):
+                            continue
+                        else:
+                            l_translated = translate_text(lstring, target_lang)
+                            worksheet.write(row,translation_column,l_translated)
+                        row+=1
+
+        #save the workbook
+        workbook.close()
+
+        csv_data = output.getvalue()
+        print(csv_data)
+        print("Run successful!")
         return render_template('success.html', workbook=workbook.filename)
     return render_template('filter_urls.html', urls=urls, form=form)
 
