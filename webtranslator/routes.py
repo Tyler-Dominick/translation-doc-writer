@@ -163,7 +163,7 @@ def filter_urls():
         csv_data = output.getvalue()
         print(csv_data)
         print("Run successful!")
-        return csv_data
+        return workbook
     return render_template('filter_urls.html', urls=urls, form=form)
 
 # Exlcude URL route. Removes the url from the db and redirects back to filter urls
