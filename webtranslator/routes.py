@@ -160,10 +160,10 @@ def filter_urls():
         #save the workbook
         workbook.close()
 
-        csv_data = output.getvalue()
-        print(csv_data)
+        # csv_data = output.getvalue()
+        print(output)
         print("Run successful!")
-        return send_file(csv_data,mimetype='application/vnd.ms-excel', download_name='test.xlsx', as_attachment=True)
+        return send_file(output,mimetype='application/vnd.ms-excel', download_name='test.xlsx', as_attachment=True)
         # return (render_template('success.html', workbook=workbook))
     return render_template('filter_urls.html', urls=urls, form=form)
 
