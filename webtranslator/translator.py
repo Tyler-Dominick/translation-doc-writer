@@ -8,6 +8,8 @@ import os
 auth_key = os.environ.get('API_KEY_DEEPL') 
 print(auth_key)
 translator = deepl.Translator(auth_key)
+ 
+ #test
 
 def translate_text(text, target_language):
     #translates text using DeepL API
