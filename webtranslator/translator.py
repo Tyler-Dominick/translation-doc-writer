@@ -80,21 +80,21 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
             title = soup.find('title').get_text().strip()
             print('Working on: ' + title)
             
-            #handles errors with worksheet titles not allowing cerrtain characters or being too long
+            #handles errors with worksheet titles not allowing certain characters or being too long
             if len(title) >= 31:
                 title=title[0:30]
             else:
                 pass
 
-            if (':' in title) or ('/' in title):
+            if (':' in title) or ('/' in title) or ('\''in title) or ('?' in title) or ('*' in title) or ('[' in title) or (']' in title) or (title == "History") or (title[0] == "'") or (title[len(title)-1] == "'"):
                 title_error_counter += 1
-                title = "title error " + str(title_error_counter)  
+                title = "Invalid title error " + str(title_error_counter)  
             else:
                 pass
 
             if title in title_set:
                 title_error_counter += 1
-                title = "Duplicate title Error" + str(title_error_counter) 
+                title = title + str(title_error_counter) 
             else: 
                 pass
 
