@@ -7,7 +7,7 @@ LANGS= [('en', 'English'),('es', 'Spanish'),('nl', 'Dutch'),('fr', 'French'),
         ('de','German'), ('el', 'Greek'), ('et', 'Estonian'), ('fi','Finnish'),
         ('hu', 'Hungarian'), ('id', 'Indonesian'), ('it', 'Italian'), ('ja','Japanese'),
         ('ko', 'Korean'), ('lt', 'Lithuanian'), ('lv','Latvian'), ('nb', 'Norwegian'),
-        ('pl','Polish'), ('pt', 'Portuguese'), ('ro', 'Romanian'), ('sk','Slovak'),
+        ('pl','Polish'), ('pt', 'Portuguese'), ('ro', 'Romanian'),('ru', 'Russian'),('sk','Slovak'),
         ('sl', 'Slovenian'), ('sv', 'Swedish'), ('tr', 'Turkish'),('uk', 'Ukrainian'), ('zh', 'Chinese')]
 
 class InputForm(FlaskForm):

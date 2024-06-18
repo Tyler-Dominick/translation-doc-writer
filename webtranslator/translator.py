@@ -86,7 +86,7 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
             else:
                 pass
 
-            if (':' in title) or ('/' in title):
+            if (':' in title) or ('/' in title) or ('?' in title):
                 title_error_counter += 1
                 title = "title error " + str(title_error_counter)  
             else:
