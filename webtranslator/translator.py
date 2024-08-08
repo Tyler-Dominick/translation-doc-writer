@@ -2,14 +2,10 @@ from bs4 import BeautifulSoup
 import requests  
 import xlsxwriter
 import deepl
-import os
+from webtranslator.Constants import API_KEY_DEEPL
 
-
-auth_key = os.environ.get('API_KEY_DEEPL') 
-print(auth_key)
+auth_key = API_KEY_DEEPL
 translator = deepl.Translator(auth_key)
- 
- #test
 
 def translate_text(text, target_language):
     #translates text using DeepL API
@@ -62,7 +58,7 @@ def get_all_urls(base_url, ignored_urls):
     
 def create_translation_doc(company_name, all_urls, source_language, target_language):
     #initialize workbook and add a sheet
-    workbook = xlsxwriter.Workbook('/tmp/' + company_name + ' - Translation Doc.xlsx')
+    workbook = xlsxwriter.Workbook(company_name + ' - Translation Doc.xlsx')
     bold = workbook.add_format({'bold':True})
     title_set=set()
     title_error_counter = 0
@@ -80,21 +76,21 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
             title = soup.find('title').get_text().strip()
             print('Working on: ' + title)
             
-            #handles errors with worksheet titles not allowing certain characters or being too long
+            #handles errors with worksheet titles not allowing cerrtain characters or being too long
             if len(title) >= 31:
                 title=title[0:30]
             else:
                 pass
 
-            if (':' in title) or ('/' in title) or ('\''in title) or ('?' in title) or ('*' in title) or ('[' in title) or (']' in title) or (title == "History") or (title[0] == "'") or (title[len(title)-1] == "'"):
+            if (':' in title) or ('/' in title):
                 title_error_counter += 1
-                title = "Invalid title error " + str(title_error_counter)  
+                title = "title error " + str(title_error_counter)  
             else:
                 pass
 
             if title in title_set:
                 title_error_counter += 1
-                title = title + str(title_error_counter) 
+                title = "Duplicate title Error" + str(title_error_counter) 
             else: 
                 pass
 
