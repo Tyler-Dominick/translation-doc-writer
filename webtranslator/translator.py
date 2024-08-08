@@ -116,11 +116,11 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
             for h in headings:
                 hstring = h.get_text().strip()
                 if hstring == '':
-                    continue
+                    pass
                 else:
                     worksheet.write(row, source_column, hstring)
                     if(source_language==target_language):
-                        continue
+                        pass
                     else:
                         h_translated = translate_text(hstring, target_language)
                         worksheet.write(row, translation_column, h_translated )
@@ -134,11 +134,11 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
             for p in paragraphs:
                 pstring = p.get_text().strip()
                 if pstring == '':
-                    continue
+                    pass
                 else:
                     worksheet.write(row, source_column, pstring)
                     if(source_language==target_language):
-                        continue
+                        pass
                     else:
                         p_translated = translate_text(pstring, target_language)
                         worksheet.write(row,translation_column,p_translated)
@@ -151,11 +151,11 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
             for l in lists:
                 lstring = l.get_text().strip()
                 if lstring == '':
-                    continue
+                    pass
                 else:
                     worksheet.write(row, source_column, lstring)
                     if(source_language==target_language):
-                        continue
+                        pass
                     else:
                         l_translated = translate_text(lstring, target_language)
                         worksheet.write(row,translation_column,l_translated)
