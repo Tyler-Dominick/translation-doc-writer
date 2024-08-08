@@ -7,8 +7,8 @@ LANGS= [('en', 'English'),('es', 'Spanish'),('nl', 'Dutch'),('fr', 'French'),
         ('de','German'), ('el', 'Greek'), ('et', 'Estonian'), ('fi','Finnish'),
         ('hu', 'Hungarian'), ('id', 'Indonesian'), ('it', 'Italian'), ('ja','Japanese'),
         ('ko', 'Korean'), ('lt', 'Lithuanian'), ('lv','Latvian'), ('nb', 'Norwegian'),
-        ('pl','Polish'), ('pt', 'Portuguese'), ('ro', 'Romanian'), ('sk','Slovak'),
-        ('sl', 'Slovenian'), ('sv', 'Swedish'), ('tr', 'Turkish'),('uk', 'Ukrainian'), ('zh', 'Chinese')]
+        ('pl','Polish'), ('pt', 'Portuguese - Unspecified'),('pt-pt', 'Portuguese - Portugal'),('pt-br', 'Portuguese - Brazilian'), ('ro', 'Romanian'),('ru', 'Russian'), ('sk','Slovak'),
+        ('sl', 'Slovenian'), ('sv', 'Swedish'), ('tr', 'Turkish'),('uk', 'Ukrainian'), ('zh', 'Chinese - Unspecified'),('zh-hans','Chinese - Simplified'),('zh-hant','Chinese - Traditional')]
 
 class InputForm(FlaskForm):
     url = StringField('Url to scrape and translate', validators=[DataRequired()])
