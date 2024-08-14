@@ -60,8 +60,19 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
     #initialize workbook and add a sheet
     workbook = xlsxwriter.Workbook(company_name + ' - Translation Doc.xlsx')
     bold = workbook.add_format({'bold':True})
-    title_set=set()
-    title_error_counter = 0
+    # title_set=set()
+    # title_error_counter = 0
+
+    worksheet = workbook.add_worksheet("Table of Contents")
+    row =  0
+    col = 0
+    sheet_counter = 2
+    for u in all_urls:
+        print(u.address)
+        worksheet.write(row, col, u.address)
+        worksheet.write(row, col+1, ("Sheet "+ str(sheet_counter)))
+        sheet_counter+=1
+        row+=1
 
     #parses the url into BeautifulSoup
     for url in all_urls:
@@ -73,30 +84,32 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
             translation_column = 1
             
             soup = fetch_and_parse(url) 
-            title = soup.find('title').get_text().strip()
-            print('Working on: ' + title)
+            title_tag = soup.find('title').get_text().strip()
+            print('Working on: ' + title_tag)
             
             #handles errors with worksheet titles not allowing cerrtain characters or being too long
-            if len(title) >= 31:
-                title=title[0:30]
-            else:
-                pass
+            
+            # if len(title) >= 31:
+            #     title=title[0:30]
+            # else:
+            #     pass
 
-            if (':' in title) or ('/' in title):
-                title_error_counter += 1
-                title = "title error " + str(title_error_counter)  
-            else:
-                pass
+            # if (':' in title) or ('/' in title) or ('?' in title) or ('\'' in title) or ('*' in title) or ('[' in title) or (']' in title):
+            #     title_error_counter += 1
+            #     title = "title error " + str(title_error_counter)  
+            # else:
+            #     pass
 
-            if title in title_set:
-                title_error_counter += 1
-                title = "Duplicate title Error" + str(title_error_counter) 
-            else: 
-                pass
+            # if title in title_set:
+            #     title_error_counter += 1
+            #     title = "Duplicate title Error" + str(title_error_counter) 
+            # else: 
+            #     pass
 
-            title_set.add(title)
-            print(title)
-            worksheet = workbook.add_worksheet(title)
+            #title_set.add(title)
+            # page_counter = 1
+            worksheet = workbook.add_worksheet()
+            # page_counter+=1
 
 
             #adds the Source language and target language to top of worksheet in columns A,B respectivly

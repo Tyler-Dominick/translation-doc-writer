@@ -25,7 +25,7 @@ def index():
         db.session.commit()
         urls = Webtranslation.query.all()
         form = TranslateForm()
-        return redirect(url_for('filter_urls', urls=urls, form=form))
+        return redirect(url_for('filter_urls'))
     urls = Webtranslation.query.all()
     return render_template('index.html', form = form, urls = urls)
 
