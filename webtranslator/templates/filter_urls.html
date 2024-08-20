@@ -7,6 +7,7 @@
 {% block body %}
     <h1>Filter Urls</h1>       
     <div class="content-section">
+        <form id="urlFilterForm" action="/exclude_url" method="POST">
         <table class="table">
             <tr>
                 <th scope="col">Url #</th>
@@ -20,17 +21,21 @@
                     {{ url.url_num }}
                 </td>
                 <td> 
-                    <a href="{{ url.address }}" target="blank"> {{url.address}}</a> 
+                    <a href="{{ url.address }}" target="_blank"> {{url.address}}</a> 
                 </td>
                 <td>
                     {{url.title}}
                 </td>
                 <td> 
-                    <a class="btn btn-danger" href="/exclude_url/{{ url.url_num }}">Exclude</a>
+                    <!--<a class="btn btn-danger" href="/exclude_url/{{ url.url_num }}">Exclude</a>-->
+                    <input type="checkbox" id="exclude" name="exclude" value="{{ url.url_num }}"/>
+                    <label for="exclude">Exclude Url</label>
                 </td>
             </tr>
             {% endfor %}
         </table>
+        <button class="btn btn-danger" type="submit">Remove Excluded Urls</button>
+    </form>
         <div class ="content-section"> 
             <form action="" method="POST">
                 {{ form.hidden_tag() }}

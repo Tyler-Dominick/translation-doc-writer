@@ -1,4 +1,4 @@
-from flask import render_template,flash, redirect, send_from_directory, url_for
+from flask import render_template,flash, redirect, send_from_directory, url_for, request
 from webtranslator import app, db
 from webtranslator.forms import InputForm, TranslateForm
 from webtranslator.translator import get_all_urls, create_translation_doc, get_title
@@ -44,10 +44,12 @@ def filter_urls():
     return render_template('filter_urls.html', urls=urls, form=form)
 
 # Exlcude URL route. Removes the url from the db and redirects back to filter urls
-@app.route('/exclude_url/<int:url_num>')
-def exclude_url(url_num):
-    url_to_delete = Webtranslation.query.get_or_404(url_num)
-    db.session.delete(url_to_delete)
+@app.route('/exclude_url', methods=['POST'])
+def exclude_url():
+    excluded_urls = request.form.getlist('exclude')
+    for url in excluded_urls:
+        url_to_delete = Webtranslation.query.get_or_404(url)
+        db.session.delete(url_to_delete)    
     db.session.commit()
     return redirect('/filter_urls')
 
