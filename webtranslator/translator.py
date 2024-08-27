@@ -3,6 +3,8 @@ import requests
 import xlsxwriter
 import deepl
 from webtranslator.Constants import API_KEY_DEEPL
+import threading
+from webtranslator.config import shared_state, state_lock
 
 auth_key = API_KEY_DEEPL
 translator = deepl.Translator(auth_key)
@@ -29,7 +31,7 @@ def get_title(url):
     return soup.find('title').get_text().strip()
 
 
-def get_all_urls(base_url, ignored_urls):
+def get_all_urls(base_url):
     # takes an input url and a list of ignored urls related to ComplianZ and blogs 
     # returns a set of all urls listed in sitemaps
     resp = requests.get(base_url + 'sitemap.xml')
@@ -48,136 +50,171 @@ def get_all_urls(base_url, ignored_urls):
             urls = sitemap_soup.findAll('url')
             for u in urls:
                 loc = u.find('loc').string
-                if loc not in ignored_urls:
-                    out.add(loc)
-                else:
-                    continue
+                out.add(loc)
     return out
 
 
+
+# def sanitize_title(title, title_set, title_error_counter):
+#     # Handle worksheet title length and illegal characters
+#     if len(title) >= 31:
+#         title = title[:30]
+
+#     for char in [':', '/', '?', '\'', '*', '[', ']']:
+#         if char in title:
+#             title_error_counter += 1
+#             title = f"title_error_{title_error_counter}"
     
-def create_translation_doc(company_name, all_urls, source_language, target_language):
-    #initialize workbook and add a sheet
-    workbook = xlsxwriter.Workbook(company_name + ' - Translation Doc.xlsx')
-    bold = workbook.add_format({'bold':True})
-    # title_set=set()
-    # title_error_counter = 0
+#     if title in title_set:
+#         title_error_counter += 1
+#         title = f"Duplicate_title_Error_{title_error_counter}"
+    
+#     title_set.add(title)
+#     return title, title_error_counter
+
+def write_content(worksheet, start_row, col, content, translate=False, target_language=None):
+    row = start_row  # Start at the specified row
+    for item in content:
+        text = item.get_text().strip()
+        if text:
+            worksheet.write(row, col, text)  # Write the original text in the specified column
+            if translate:
+                translated_text = translate_text(text, target_language)
+                worksheet.write(row, col, translated_text)  # Write the translated text in the same row, next column
+            row += 1
+    return start_row, row  # Return the starting and next available row
+
+
+def create_translation_doc(company_name, all_urls, source_language, target_languages):
+    global current_url
+    # Initialize workbook and add a sheet
+    workbook = xlsxwriter.Workbook(f'{company_name} - Translation Doc.xlsx')
+    bold = workbook.add_format({'bold': True})
 
     worksheet = workbook.add_worksheet("Table of Contents")
-    row =  0
-    col = 0
+    row, col = 0, 0
     sheet_counter = 2
-    for u in all_urls:
-        print(u.address)
-        worksheet.write(row, col, u.address)
-        worksheet.write(row, col+1, ("Sheet "+ str(sheet_counter)))
-        sheet_counter+=1
-        row+=1
 
-    #parses the url into BeautifulSoup
+    # Table of contents
     for url in all_urls:
-            
-            #sets the starting row/col for the worksheet
-            row = 3
-            source_column = 0
-            #specifies the column where the translated content should go
-            translation_column = 1
-            
-            soup = fetch_and_parse(url) 
-            title_tag = soup.find('title').get_text().strip()
-            print('Working on: ' + title_tag)
-            
-            #handles errors with worksheet titles not allowing cerrtain characters or being too long
-            
-            # if len(title) >= 31:
-            #     title=title[0:30]
-            # else:
-            #     pass
+        worksheet.write(row, col, url.address)
+        worksheet.write(row, col + 1, f"Sheet {sheet_counter}")
+        sheet_counter += 1
+        row += 1
 
-            # if (':' in title) or ('/' in title) or ('?' in title) or ('\'' in title) or ('*' in title) or ('[' in title) or (']' in title):
-            #     title_error_counter += 1
-            #     title = "title error " + str(title_error_counter)  
-            # else:
-            #     pass
+    for url in all_urls:
+        with state_lock:
+            shared_state['current_url'] = f'Translating: {url.address}'
+            print(f"Updated current_url to {shared_state['current_url']}")
 
-            # if title in title_set:
-            #     title_error_counter += 1
-            #     title = "Duplicate title Error" + str(title_error_counter) 
-            # else: 
-            #     pass
+        soup = fetch_and_parse(url.address)
+        print(f'Working on: {url.address}')
+        
+        worksheet = workbook.add_worksheet()
 
-            #title_set.add(title)
-            # page_counter = 1
-            worksheet = workbook.add_worksheet()
-            # page_counter+=1
+        # Add source language and target languages to the worksheet
+        worksheet.write('A1', url.address)
+        worksheet.write('A2', source_language)
+        for idx, target_language in enumerate(target_languages):
+            worksheet.write(1, idx + 1, target_language)
 
+        # Extract content from the main section of the HTML
+        site_content = soup.find('main')
+        headings = site_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']) if site_content else []
+        paragraphs = site_content.find_all('p') if site_content else []
+        lists = site_content.find_all('li') if site_content else []
 
-            #adds the Source language and target language to top of worksheet in columns A,B respectivly
-            worksheet.write('A1', url.address)
-            worksheet.write('A2', source_language)
-            worksheet.write('B2', target_language)
+        # Write headings
+        row = 3
+        worksheet.write(row, 0, 'Headings:', bold)
+        start_row = row + 1
+        _, row = write_content(worksheet, start_row, 0, headings, False)  # Write source headings
+        for idx, target_language in enumerate(target_languages):
+            if target_language == source_language:
+                continue
+            write_content(worksheet, start_row, idx + 1, headings, True, target_language)  # Write translations
 
-            #finds everything in <main> of HTML file and adds the content to appropriate variables
-            site_content = soup.find('main') 
-            headings = site_content.find_all(['h1','h2','h3', 'h4', 'h5', 'h6']) 
-            paragraphs = site_content.find_all('p')
-            lists = site_content.find_all('li')
+        # Write paragraphs
+        row += 2  # Create some space between sections
+        worksheet.write(row, 0, 'Paragraphs:', bold)
+        start_row = row + 1
+        _, row = write_content(worksheet, start_row, 0, paragraphs, False)  # Write source paragraphs
+        for idx, target_language in enumerate(target_languages):
+            if target_language == source_language:
+                continue
+            write_content(worksheet, start_row, idx + 1, paragraphs, True, target_language)  # Write translations
 
-            worksheet.write(row, source_column, 'Headings:', bold)
-            row+=1
-            # for each heading in the list, write the source text in column A and the translated Text in column B of the worksheet  
-            for h in headings:
-                hstring = h.get_text().strip()
-                if hstring == '':
-                    pass
-                else:
-                    worksheet.write(row, source_column, hstring)
-                    if(source_language==target_language):
-                        pass
-                    else:
-                        h_translated = translate_text(hstring, target_language)
-                        worksheet.write(row, translation_column, h_translated )
-                    row+=1
+        # Write list elements
+        row += 2  # Create some space between sections
+        worksheet.write(row, 0, 'List Elements:', bold)
+        start_row = row + 1
+        _, row = write_content(worksheet, start_row, 0, lists, False)  # Write source lists
+        for idx, target_language in enumerate(target_languages):
+            if target_language == source_language:
+                continue
+            write_content(worksheet, start_row, idx + 1, lists, True, target_language)  # Write translations
 
-            row+=1
-            worksheet.write(row, source_column, 'Paragraphs:', bold)
-            row+=1
-
-            #for each Paragraph in the list, write the source text in column A and the translated Text in column B of the worksheet
-            for p in paragraphs:
-                pstring = p.get_text().strip()
-                if pstring == '':
-                    pass
-                else:
-                    worksheet.write(row, source_column, pstring)
-                    if(source_language==target_language):
-                        pass
-                    else:
-                        p_translated = translate_text(pstring, target_language)
-                        worksheet.write(row,translation_column,p_translated)
-                    row+=1
-
-            row+=1
-            worksheet.write(row, source_column, 'List Elements:', bold)
-            row+=1
-            #for each list element in the list, write the source text in column A and the translated Text in column B of the worksheet
-            for l in lists:
-                lstring = l.get_text().strip()
-                if lstring == '':
-                    pass
-                else:
-                    worksheet.write(row, source_column, lstring)
-                    if(source_language==target_language):
-                        pass
-                    else:
-                        l_translated = translate_text(lstring, target_language)
-                        worksheet.write(row,translation_column,l_translated)
-                    row+=1
-
-    #save the workbook
     workbook.close()
+    with state_lock:
+        shared_state['current_url']= "Translation complete!"
+        print(f"Updated current_url to: {shared_state['current_url']}")
     print("Run successful!")
     return workbook
 
 
-    
+# def create_translation_doc(company_name, all_urls, source_language, target_language):
+#     # Initialize workbook and add a sheet
+#     workbook = xlsxwriter.Workbook(f'{company_name} - Translation Doc.xlsx')
+#     bold = workbook.add_format({'bold': True})
+
+#     worksheet = workbook.add_worksheet("Table of Contents")
+#     row, col = 0, 0
+#     sheet_counter = 2
+
+#     # Table of contents
+#     for url in all_urls:
+#         worksheet.write(row, col, url.address)
+#         worksheet.write(row, col + 1, f"Sheet {sheet_counter}")
+#         sheet_counter += 1
+#         row += 1
+
+#     title_set = set()
+#     title_error_counter = 0
+#     translate = source_language != target_language
+
+#     for url in all_urls:
+#         soup = fetch_and_parse(url)
+#         title_tag = soup.find('title').get_text().strip()
+#         print(f'Working on: {title_tag}')
+
+#         # title, title_error_counter = sanitize_title(title_tag, title_set, title_error_counter)
+
+#         worksheet = workbook.add_worksheet()
+
+#         # Add source language and target language to the worksheet
+#         worksheet.write('A1', url.address)
+#         worksheet.write('A2', source_language)
+#         worksheet.write('B2', target_language)
+
+#         # Extract content from the main section of the HTML
+#         site_content = soup.find('main')
+#         headings = site_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']) if site_content else []
+#         paragraphs = site_content.find_all('p') if site_content else []
+#         lists = site_content.find_all('li') if site_content else []
+
+#         # Write headings
+#         row = 3
+#         worksheet.write(row, 0, 'Headings:', bold)
+#         row = write_content(worksheet, row + 1, 0, headings, translate, target_language)
+
+#         # Write paragraphs
+#         worksheet.write(row, 0, 'Paragraphs:', bold)
+#         row = write_content(worksheet, row + 1, 0, paragraphs, translate, target_language)
+
+#         # Write list elements
+#         worksheet.write(row, 0, 'List Elements:', bold)
+#         row = write_content(worksheet, row + 1, 0, lists, translate, target_language)
+
+#     workbook.close()
+#     print("Run successful!")
+#     return workbook

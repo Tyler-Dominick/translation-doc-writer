@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SelectField, SubmitField
+from wtforms import StringField, SelectField, SubmitField,SelectMultipleField,widgets
 from wtforms.validators import DataRequired
 
 LANGS= [('en', 'English'),('es', 'Spanish'),('nl', 'Dutch'),('fr', 'French'),
@@ -14,10 +14,13 @@ class InputForm(FlaskForm):
     url = StringField('Url to scrape and translate', validators=[DataRequired()])
     submit = SubmitField('Get All Urls')
 
+class MultiCheckboxField(SelectMultipleField):
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
 
 class TranslateForm(FlaskForm):
     company_name = StringField('Company Name', validators=[DataRequired()])
     source_lang = SelectField('Source Language', choices=LANGS)
-    target_lang = SelectField('Target Language', choices=LANGS)
+    target_lang = MultiCheckboxField('Target Language', choices=LANGS)
     submit = SubmitField('Scrape and Translate')
 

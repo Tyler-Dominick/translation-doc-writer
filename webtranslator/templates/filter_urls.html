@@ -12,8 +12,10 @@
             <tr>
                 <th scope="col">Url #</th>
                 <th scope="col">Url</th>
-                <th scope="col">Title</th>
-                <th scope="col">Exclude?</th>
+                <th scope="col">
+                    <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"/>
+                    <label for="selectAll">Exclude All?</label>
+                </th>
             </tr>
             {% for url in urls %}
             <tr>
@@ -23,12 +25,8 @@
                 <td> 
                     <a href="{{ url.address }}" target="_blank"> {{url.address}}</a> 
                 </td>
-                <td>
-                    {{url.title}}
-                </td>
                 <td> 
-                    <!--<a class="btn btn-danger" href="/exclude_url/{{ url.url_num }}">Exclude</a>-->
-                    <input type="checkbox" id="exclude" name="exclude" value="{{ url.url_num }}"/>
+                    <input type="checkbox" id="exclude" name="exclude" class="exclude-checkbox" value="{{ url.url_num }}"/>
                     <label for="exclude">Exclude Url</label>
                 </td>
             </tr>
@@ -36,28 +34,43 @@
         </table>
         <button class="btn btn-danger" type="submit">Remove Excluded Urls</button>
     </form>
-        <div class ="content-section"> 
-            <form action="" method="POST">
-                {{ form.hidden_tag() }}
-                <fieldset class = "form-group">
-                    <legend class = "border-bottom mb-4">Submit Url</legend>
-                    <div class="form-group">
-                        {{ form.company_name.label(class="form-control-label")}}
-                        {{ form.company_name(class="form-control form-control-lg")}}
-                    </div>
-                    <div class="form-group">
-                        {{ form.source_lang.label(class="form-control-label")}}
-                        {{ form.source_lang(class="form-control form-control-lg")}}
-                    </div>
-                    <div class="form-group">
-                        {{ form.target_lang.label(class="form-control-label")}}
-                        {{ form.target_lang(class="form-control form-control-lg")}}
-                    </div>
-                </fieldset>
-                <div class="form-group">
-                    {{ form.submit(class="btn btn-primary")}}
-                </div>
-            </form>
-        </div>
     </div>
+    <div class ="content-section"> 
+        <form action="" method="POST">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Submit Url</legend>
+                <div class="form-group">
+                    {{ form.company_name.label(class="form-control-label") }}
+                    {{ form.company_name(class="form-control form-control-lg") }}
+                </div>
+                <div class="form-group">
+                    {{ form.source_lang.label(class="form-control-label") }}
+                    {{ form.source_lang(class="form-control form-control-lg") }}
+                </div>
+                <div class="form-group">
+                    <label class="form-control-label">Target Languages</label>
+                    {% for checkbox in form.target_lang %}
+                        <div class="form-check">
+                            {{ checkbox(class="form-check-input") }}
+                            <label class="form-check-label" for="{{ checkbox.id }}">
+                                {{ checkbox.label.text }}
+                            </label>
+                        </div>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+    </div>
+    <script>
+        function toggleSelectAll(selectAllCheckbox) {
+            const checkboxes = document.querySelectorAll('.exclude-checkbox');
+            checkboxes.forEach((checkbox) => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+    </script>
 {% endblock %}

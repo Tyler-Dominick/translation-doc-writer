@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block head %}
+<title>Translation Progress</title>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
+{% block body %}
+<div id="loading-screen" class="text-center my-5">
+    <h1 class="display-4 text-primary">Translating...</h1>
+    <div class="spinner-border text-primary" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
+    <p id="current-url" class="lead mt-4">Preparing to start...</p>
+</div>
+
+<div id="complete-screen" class="text-center my-5" style="display: none;">
+    <h1 class="display-4 text success">Translation Complete!</h1>
+    <a href="{{ url_for('download_link', filename = workbook_filename) }}">
+        <i class="fas fa-download">Download Translated Document</i>
+    </a>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    let intervalId = setInterval(updateCurrentUrl, 1000); // Poll the server every second
+
+    function updateCurrentUrl() {
+        $.getJSON("{{ url_for('get_current_url') }}", function(data) {
+            console.log("Received data:", data);  // Debug log statement
+            $("#current-url").text(data.current_url);
+            if (data.current_url === "Translation complete!") {
+                $("#loading-screen").hide();
+                $("#complete-screen").show();
+                clearInterval(intervalId); // Stop the polling
+            }
+        }).fail(function() {
+            console.log("Failed to fetch current_url");  // Handle errors
+        });
+    }
+});
+</script>
+{% endblock %}
