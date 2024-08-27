@@ -50,6 +50,7 @@
                 </div>
                 <div class="form-group">
                     <label class="form-control-label">Target Languages</label>
+                    <div class="checkbox-grid">                    
                     {% for checkbox in form.target_lang %}
                         <div class="form-check">
                             {{ checkbox(class="form-check-input") }}
@@ -58,6 +59,7 @@
                             </label>
                         </div>
                     {% endfor %}
+                </div>
                 </div>
             </fieldset>
             <div class="form-group">
