@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SelectField, SubmitField,SelectMultipleField,widgets
 from wtforms.validators import DataRequired
 
-LANGS= [('en', 'English'),('es', 'Spanish'),('nl', 'Dutch'),('fr', 'French'),
+LANGS= [('en', 'English'),('en-gb','English - UK'),('es', 'Spanish'),('nl', 'Dutch'),('fr', 'French'),
         ('ar', 'Arabic'), ('bg', 'Bulgarian'), ('cs','Czech'), ('da', 'Danish'),
         ('de','German'), ('el', 'Greek'), ('et', 'Estonian'), ('fi','Finnish'),
         ('hu', 'Hungarian'), ('id', 'Indonesian'), ('it', 'Italian'), ('ja','Japanese'),
@@ -12,6 +12,7 @@ LANGS= [('en', 'English'),('es', 'Spanish'),('nl', 'Dutch'),('fr', 'French'),
 
 class InputForm(FlaskForm):
     url = StringField('Url to scrape and translate', validators=[DataRequired()])
+    blogs = SelectField('Include Blogs?', choices=[('yes', 'Yes'),('no', 'No')])
     submit = SubmitField('Get All Urls')
 
 class MultiCheckboxField(SelectMultipleField):

@@ -18,7 +18,7 @@ def index():
     form = InputForm()
     if form.validate_on_submit():
         i=1
-        urls = get_all_urls(form.url.data)
+        urls = get_all_urls(form.url.data,form.blogs.data)
         for u in urls:
             url_element = Webtranslation(url_num=i,address = u)
             db.session.add(url_element)
