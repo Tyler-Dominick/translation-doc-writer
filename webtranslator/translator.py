@@ -80,7 +80,7 @@ def write_content(worksheet, start_row, col, content, translate=False, target_la
 def create_translation_doc(company_name, all_urls, source_language, target_languages):
     global current_url
     # Initialize workbook and add a sheet
-    workbook = xlsxwriter.Workbook(f'{company_name}')
+    workbook = xlsxwriter.Workbook(f'{company_name}.xlsx')
     bold = workbook.add_format({'bold': True})
 
     worksheet = workbook.add_worksheet("Table of Contents")
