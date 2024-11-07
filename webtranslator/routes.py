@@ -86,5 +86,5 @@ def translation_progress():
     thread = threading.Thread(target=create_translation_doc, args=(company_name, urls, source_lang, target_langs))
     thread.start()
     # Render the template first
-    workbook_filename = f'{company_name} - Translation Doc.xlsx'
+    workbook_filename = f'{company_name}.xlsx'
     return render_template('translation_progress.html', workbook_filename=workbook_filename)
