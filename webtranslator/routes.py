@@ -55,8 +55,8 @@ def exclude_url():
 # Route for download page
 @app.route('/download_link/<path:filename>', methods=['GET', 'POST'])
 def download_link(filename):
-   permitted_directory='/Users/tdominick/Documents/GitHub/translation-doc-writer'
-   return send_from_directory(directory=permitted_directory, path=filename, as_attachment=True)
+    permitted_directory= os.path.abspath(os.getcwd())
+    return send_from_directory(directory=permitted_directory, path=filename, as_attachment=True)
 
 
 
