@@ -6,3 +6,4 @@ flask_wtf==1.2.2
 Requests==2.32.3
 WTForms==3.2.1
 XlsxWriter==3.2.0
+lxml==5.3.0
