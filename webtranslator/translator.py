@@ -123,6 +123,10 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
         headings = site_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']) if site_content else []
         paragraphs = site_content.find_all('p') if site_content else []
         lists = site_content.find_all('li') if site_content else []
+        # Gather elements in the same order as they appear on the page
+        ordered_elements = site_content.find_all(
+            ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li']
+        ) if site_content else []
 
         #write title
         row = 3
@@ -144,35 +148,34 @@ def create_translation_doc(company_name, all_urls, source_language, target_langu
                 continue
             write_content(worksheet, start_row, idx + 1, meta_desc, True, target_language)  # Write translations
 
-        # Write headings
-        row +=2
-        worksheet.write(row, 0, 'Headings:', bold)
+        # Write content in document order (headings, paragraphs, list items)
+        row += 2
+        worksheet.write(row, 0, 'Content (ordered):', bold)
         start_row = row + 1
-        _, row = write_content(worksheet, start_row, 0, headings, False)  # Write source headings
-        for idx, target_language in enumerate(target_languages):
-            if target_language == source_language:
+        row = start_row
+        for element in ordered_elements:
+            try:
+                text = element.get_text().strip()
+            except Exception:
+                text = ""
+            if not text:
                 continue
-            write_content(worksheet, start_row, idx + 1, headings, True, target_language)  # Write translations
-
-        # Write paragraphs
-        row += 2  # Create some space between sections
-        worksheet.write(row, 0, 'Paragraphs:', bold)
-        start_row = row + 1
-        _, row = write_content(worksheet, start_row, 0, paragraphs, False)  # Write source paragraphs
-        for idx, target_language in enumerate(target_languages):
-            if target_language == source_language:
-                continue
-            write_content(worksheet, start_row, idx + 1, paragraphs, True, target_language)  # Write translations
-
-        # Write list elements
-        row += 2  # Create some space between sections
-        worksheet.write(row, 0, 'List Elements:', bold)
-        start_row = row + 1
-        _, row = write_content(worksheet, start_row, 0, lists, False)  # Write source lists
-        for idx, target_language in enumerate(target_languages):
-            if target_language == source_language:
-                continue
-            write_content(worksheet, start_row, idx + 1, lists, True, target_language)  # Write translations
+            is_heading = hasattr(element, 'name') and element.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+            # Write source text with formatting if heading
+            if is_heading:
+                worksheet.write(row, 0, text, bold)
+            else:
+                worksheet.write(row, 0, text)
+            # Write translations in same row with matching formatting
+            for idx, target_language in enumerate(target_languages):
+                if target_language == source_language:
+                    continue
+                translated_text = translate_text(text, target_language)
+                if is_heading:
+                    worksheet.write(row, idx + 1, translated_text, bold)
+                else:
+                    worksheet.write(row, idx + 1, translated_text)
+            row += 1
 
     workbook.close()
     with state_lock:
