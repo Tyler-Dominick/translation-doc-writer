@@ -55,7 +55,7 @@ instance/
 *.db
 *.sqlite
 *.sqlite3
-build_distribution.py
+
 
 # Distribution
 Website-Translation-Tool-Distribution/
