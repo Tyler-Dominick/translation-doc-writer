@@ -23,7 +23,7 @@ def build_executable():
     
     # PyInstaller command for macOS
     cmd = [
-        'pyinstaller',
+        sys.executable, '-m', 'PyInstaller',
         '--onefile',
         '--windowed',
         '--name=Website-Translation-Tool',

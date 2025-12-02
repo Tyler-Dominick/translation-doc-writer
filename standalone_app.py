@@ -232,7 +232,7 @@ class TranslationApp:
         # Variables
         self.base_url = tk.StringVar()
         self.company_name = tk.StringVar()
-        self.source_language = tk.StringVar(value="EN - English")
+        self.source_language = tk.StringVar(value="EN-US - English (US)")
         self.target_languages = []
         self.include_blogs = tk.BooleanVar(value=False)
         self.selected_urls = []
@@ -307,20 +307,46 @@ class TranslationApp:
         
         # Language code to English name mapping (reused for source language)
         language_names = {
-            'EN': 'English',
-            'ES': 'Spanish', 
+            'AR': 'Arabic',
+            'BG': 'Bulgarian',
+            'CS': 'Czech',
+            'ZH-HANS': 'Chinese (Simplified)',
+            'ZH-HANT': 'Chinese (Traditional)',
+            'DA': 'Danish',
+            'NL': 'Dutch',
+            'EN-GB': 'English (UK)',
+            'EN-US': 'English (US)',
+            'ET': 'Estonian',
+            'FI': 'Finnish',
             'FR': 'French',
             'DE': 'German',
+            'EL': 'Greek',
+            'HU': 'Hungarian',
+            'ID': 'Indonesian',
             'IT': 'Italian',
-            'PT': 'Portuguese',
-            'RU': 'Russian',
             'JA': 'Japanese',
             'KO': 'Korean',
-            'ZH': 'Chinese'
+            'LT': 'Lithuanian',
+            'LV': 'Latvian',
+            'NB': 'Norwegian (Bokmål)',
+            'PL': 'Polish',
+            'PT-PT': 'Portuguese (Portugal)',
+            'PT-BR': 'Portuguese (Brazil)',
+            'RO': 'Romanian',
+            'RU': 'Russian',
+            'SK': 'Slovak',
+            'SL': 'Slovenian',
+            'ES': 'Spanish',
+            'SV': 'Swedish',
+            'TH': 'Thai',
+            'TR': 'Turkish',
+            'UK': 'Ukrainian',
+            'VI': 'Vietnamese',
         }
         
-        # Create display values for source language dropdown
-        source_languages = ['EN', 'ES', 'FR', 'DE', 'IT', 'PT', 'RU', 'JA', 'KO', 'ZH']
+        # Create display values for source language dropdown (using all available languages)
+        source_languages = list(language_names.keys())
+        source_languages.sort()  # Sort alphabetically for better UX
         source_display_values = [f"{lang} - {language_names[lang]}" for lang in source_languages]
         self.source_combo['values'] = source_display_values
         self.source_combo.grid(row=0, column=1, sticky=tk.W, padx=(0, 10), pady=(10, 5))
@@ -329,23 +355,10 @@ class TranslationApp:
         self.target_frame = ttk.Frame(self.language_frame)
         self.target_frame.grid(row=1, column=1, sticky=tk.W, padx=(0, 10), pady=(5, 10))
         
-        # Target language checkboxes
+        # Target language checkboxes (using all available languages)
         self.target_vars = {}
-        languages = ['EN', 'ES', 'FR', 'DE', 'IT', 'PT', 'RU', 'JA', 'KO', 'ZH']
-        
-        # Language code to English name mapping
-        language_names = {
-            'EN': 'English',
-            'ES': 'Spanish', 
-            'FR': 'French',
-            'DE': 'German',
-            'IT': 'Italian',
-            'PT': 'Portuguese',
-            'RU': 'Russian',
-            'JA': 'Japanese',
-            'KO': 'Korean',
-            'ZH': 'Chinese'
-        }
+        languages = list(language_names.keys())
+        languages.sort()  # Sort alphabetically for better UX
         
         for i, lang in enumerate(languages):
             var = tk.BooleanVar()
@@ -516,10 +529,20 @@ class TranslationApp:
                 # Update status to show we're starting
                 self.update_progress(5, "Starting translation...", "", "Preparing output directory...")
                 
-                # Create output directory
-                output_dir = "translation_outputs"
-                if not os.path.exists(output_dir):
-                    os.makedirs(output_dir)
+                # Create output directory in user's Documents folder
+                import os.path
+                home_dir = os.path.expanduser("~")
+                output_dir = os.path.join(home_dir, "Documents", "Website-Translation-Tool-Outputs")
+                
+                # Try to create the directory, with fallbacks
+                try:
+                    if not os.path.exists(output_dir):
+                        os.makedirs(output_dir)
+                except (OSError, PermissionError):
+                    # Fallback to current directory if Documents folder is not accessible
+                    output_dir = "translation_outputs"
+                    if not os.path.exists(output_dir):
+                        os.makedirs(output_dir)
                 
                 # Change to output directory for file creation
                 original_cwd = os.getcwd()
@@ -568,8 +591,13 @@ class TranslationApp:
         self.update_progress(100, "Processing complete!", "", "")
         self.clear_progress_details()
         
-        # Get the output directory path
-        output_dir = os.path.abspath("translation_outputs")
+        # Get the output directory path (same logic as in start_translation)
+        home_dir = os.path.expanduser("~")
+        output_dir = os.path.join(home_dir, "Documents", "Website-Translation-Tool-Outputs")
+        
+        # Check if the Documents folder path exists, otherwise use fallback
+        if not os.path.exists(output_dir):
+            output_dir = os.path.abspath("translation_outputs")
         
         # Check which type of file was created
         try:
@@ -639,7 +667,7 @@ class TranslationApp:
         # Clear all input fields
         self.base_url.set("")
         self.company_name.set("")
-        self.source_language.set("EN - English")
+        self.source_language.set("EN-US - English (US)")
         
         # Uncheck all target language checkboxes
         for var in self.target_vars.values():
