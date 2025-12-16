@@ -2,10 +2,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import threading
 import os
+import json
 import requests
 from bs4 import BeautifulSoup
 import xlsxwriter
 import deepl
+from pathlib import Path
 
 # API Key management
 _CACHED_DEEPL_KEY = None
@@ -13,7 +15,47 @@ _CACHED_DEEPL_KEY = None
 # Translation cache (in-memory, session-only)
 _translation_cache = {}
 
+# Config file management
+def _get_config_path():
+    """Get the path to the config file"""
+    config_dir = Path.home() / ".website-translation-tool"
+    config_dir.mkdir(exist_ok=True)
+    return config_dir / "config.json"
+
+def _load_config():
+    """Load config from JSON file"""
+    config_path = _get_config_path()
+    if config_path.exists():
+        try:
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, IOError):
+            return {}
+    return {}
+
+def _save_config(config_dict):
+    """Save config to JSON file"""
+    config_path = _get_config_path()
+    try:
+        with open(config_path, 'w') as f:
+            json.dump(config_dict, f, indent=2)
+        # Set file permissions to be readable only by user (Unix/macOS)
+        try:
+            os.chmod(config_path, 0o600)
+        except (OSError, AttributeError):
+            pass  # Windows doesn't support chmod the same way
+        return True
+    except (IOError, OSError):
+        return False
+
+def _save_api_key(key):
+    """Save API key to config file"""
+    config = _load_config()
+    config['deepl_api_key'] = key
+    return _save_config(config)
+
 def _prompt_deepl_key_gui():
+    """Prompt user for API key via GUI and save it"""
     try:
         import tkinter as tk
         from tkinter import simpledialog
@@ -21,19 +63,40 @@ def _prompt_deepl_key_gui():
         root.withdraw()
         key = simpledialog.askstring("DeepL API Key", "Enter your DeepL API key:", show='*')
         root.destroy()
-        return (key or "").strip()
+        key = (key or "").strip()
+        
+        # Save key to config file if provided
+        if key:
+            _save_api_key(key)
+        
+        return key
     except Exception:
         # Fallback to terminal prompt if GUI is unavailable
         try:
             import getpass
-            return getpass.getpass('Enter DeepL API key: ').strip()
+            key = getpass.getpass('Enter DeepL API key: ').strip()
+            if key:
+                _save_api_key(key)
+            return key
         except Exception:
-            return input('Enter DeepL API key: ').strip()
+            key = input('Enter DeepL API key: ').strip()
+            if key:
+                _save_api_key(key)
+            return key
 
 def _load_deepl_key():
+    """Load API key from environment variable, config file, or prompt user"""
+    # Check environment variable first
     env = os.getenv('DEEPL_API_KEY')
     if env:
         return env.strip()
+    
+    # Check config file
+    config = _load_config()
+    if config.get('deepl_api_key'):
+        return config['deepl_api_key'].strip()
+    
+    # If not found, prompt user
     return _prompt_deepl_key_gui()
 
 def get_deepl_key():
@@ -417,7 +480,11 @@ class TranslationApp:
         self.start_button = ttk.Button(self.button_frame, text="Start Scraping", command=self.start_translation)
         self.start_button.grid(row=0, column=0, padx=(0, 10))
         self.new_button = ttk.Button(self.button_frame, text="New Scraping", command=self.reset_form)
-        self.new_button.grid(row=0, column=1)
+        self.new_button.grid(row=0, column=1, padx=(0, 10))
+        
+        # Settings button for changing API key
+        self.settings_button = ttk.Button(self.button_frame, text="Change API Key", command=self.change_api_key)
+        self.settings_button.grid(row=0, column=2)
         
         # Configure main frame grid weights
         main_frame.rowconfigure(5, weight=1)
@@ -674,6 +741,41 @@ class TranslationApp:
         self.status_label.config(text="Error occurred")
         self.clear_progress_details()
         messagebox.showerror("Error", message)
+    
+    def change_api_key(self):
+        """Allow user to change the DeepL API key"""
+        from tkinter import simpledialog
+        
+        # Prompt for new API key
+        new_key = simpledialog.askstring(
+            "Change DeepL API Key",
+            "Enter your new DeepL API key:",
+            show='*'
+        )
+        
+        if new_key is None:
+            # User cancelled
+            return
+        
+        new_key = new_key.strip()
+        
+        if not new_key:
+            messagebox.showwarning("Warning", "API key cannot be empty. Key not changed.")
+            return
+        
+        # Save new key to config
+        if _save_api_key(new_key):
+            # Clear cached key and translator to force reload
+            global _CACHED_DEEPL_KEY, _translator
+            _CACHED_DEEPL_KEY = None
+            _translator = None
+            
+            # Update UI state
+            self.check_api_key_status()
+            
+            messagebox.showinfo("Success", "API key updated successfully!")
+        else:
+            messagebox.showerror("Error", "Failed to save API key. Please try again.")
     
     def reset_form(self):
         """Reset all form fields for a new translation"""
