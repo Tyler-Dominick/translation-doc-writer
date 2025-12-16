@@ -303,7 +303,17 @@ class TranslationApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Website Translation Tool")
-        self.root.geometry("900x700")
+        
+        # Get screen dimensions and set window to full width
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        
+        # Set window to full width with reasonable height
+        window_width = int(screen_width * .9)
+        window_height = screen_height  # Fixed reasonable height
+        
+        self.root.geometry(f"{window_width}x{window_height}")
+        self.root.minsize(800, 600)  # Prevent window from being too small
         
         # Variables
         self.base_url = tk.StringVar()
