@@ -10,6 +10,9 @@ import deepl
 # API Key management
 _CACHED_DEEPL_KEY = None
 
+# Translation cache (in-memory, session-only)
+_translation_cache = {}
+
 def _prompt_deepl_key_gui():
     try:
         import tkinter as tk
@@ -71,8 +74,18 @@ def _get_translator():
     return _translator
 
 def translate_text(text, target_language):
+    # Create cache key with target language to handle multiple target languages
+    cache_key = f"{target_language}|{text}"
+    
+    # Check cache first
+    if cache_key in _translation_cache:
+        return _translation_cache[cache_key]
+    
+    # If not in cache, translate and store
     translation = _get_translator().translate_text(text, target_lang=target_language)
-    return translation.text
+    translated_text = translation.text
+    _translation_cache[cache_key] = translated_text
+    return translated_text
 
 def fetch_and_parse(url):
     response = requests.get(url)
