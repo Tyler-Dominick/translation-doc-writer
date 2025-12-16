@@ -14,7 +14,7 @@ A standalone desktop application for extracting and translating website content 
 
 1. **Run the app:**
    ```bash
-   python3 standalone_app.py
+   python3 main.py
    ```
 
 2. **For translation (requires DeepL API key):**

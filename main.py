@@ -1,303 +1,19 @@
+"""Main GUI application for Website Translation Tool"""
+
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, simpledialog
 import threading
 import os
-import json
-import requests
-from bs4 import BeautifulSoup
-import xlsxwriter
-import deepl
-from pathlib import Path
 
-# API Key management
-_CACHED_DEEPL_KEY = None
+# Import from our modules
+from constants import LANGUAGE_NAMES
+from api_key import get_deepl_key, clear_cached_key
+from config import save_api_key
+from updates import check_for_updates, show_update_dialog
+from scraper import get_all_urls
+from document_creator import create_translation_doc, create_content_only_doc
+from translator import clear_translator
 
-# Translation cache (in-memory, session-only)
-_translation_cache = {}
-
-# Config file management
-def _get_config_path():
-    """Get the path to the config file"""
-    config_dir = Path.home() / ".website-translation-tool"
-    config_dir.mkdir(exist_ok=True)
-    return config_dir / "config.json"
-
-def _load_config():
-    """Load config from JSON file"""
-    config_path = _get_config_path()
-    if config_path.exists():
-        try:
-            with open(config_path, 'r') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
-            return {}
-    return {}
-
-def _save_config(config_dict):
-    """Save config to JSON file"""
-    config_path = _get_config_path()
-    try:
-        with open(config_path, 'w') as f:
-            json.dump(config_dict, f, indent=2)
-        # Set file permissions to be readable only by user (Unix/macOS)
-        try:
-            os.chmod(config_path, 0o600)
-        except (OSError, AttributeError):
-            pass  # Windows doesn't support chmod the same way
-        return True
-    except (IOError, OSError):
-        return False
-
-def _save_api_key(key):
-    """Save API key to config file"""
-    config = _load_config()
-    config['deepl_api_key'] = key
-    return _save_config(config)
-
-def _prompt_deepl_key_gui():
-    """Prompt user for API key via GUI and save it"""
-    try:
-        import tkinter as tk
-        from tkinter import simpledialog
-        root = tk.Tk()
-        root.withdraw()
-        key = simpledialog.askstring("DeepL API Key", "Enter your DeepL API key:", show='*')
-        root.destroy()
-        key = (key or "").strip()
-        
-        # Save key to config file if provided
-        if key:
-            _save_api_key(key)
-        
-        return key
-    except Exception:
-        # Fallback to terminal prompt if GUI is unavailable
-        try:
-            import getpass
-            key = getpass.getpass('Enter DeepL API key: ').strip()
-            if key:
-                _save_api_key(key)
-            return key
-        except Exception:
-            key = input('Enter DeepL API key: ').strip()
-            if key:
-                _save_api_key(key)
-            return key
-
-def _load_deepl_key():
-    """Load API key from environment variable, config file, or prompt user"""
-    # Check environment variable first
-    env = os.getenv('DEEPL_API_KEY')
-    if env:
-        return env.strip()
-    
-    # Check config file
-    config = _load_config()
-    if config.get('deepl_api_key'):
-        return config['deepl_api_key'].strip()
-    
-    # If not found, prompt user
-    return _prompt_deepl_key_gui()
-
-def get_deepl_key():
-    global _CACHED_DEEPL_KEY
-    if _CACHED_DEEPL_KEY is None:
-        _CACHED_DEEPL_KEY = _load_deepl_key()
-    return _CACHED_DEEPL_KEY
-
-# URL fetching function
-def get_all_urls(base_url, blogs):
-    """Fetch all URLs from website sitemap"""
-    resp = requests.get(base_url + 'sitemap.xml')
-    soup = BeautifulSoup(resp.content, 'xml')
-    site_maps = soup.findAll('sitemap')
-    
-    out = set()
-    print(f'{blogs}')
-    for site_map in site_maps:
-        map = site_map.find('loc').string
-        if map == (base_url + "post-sitemap.xml") and (blogs=='no'):
-            continue
-        else:
-            response = requests.get(map)
-            sitemap_soup = BeautifulSoup(response.content, 'xml')
-            urls = sitemap_soup.findAll('url')
-            for u in urls:
-                loc = u.find('loc').string
-                out.add(loc)
-    return out
-
-# Translation functions
-_translator = None
-
-def _get_translator():
-    global _translator
-    if _translator is None:
-        _translator = deepl.Translator(get_deepl_key())
-    return _translator
-
-def translate_text(text, target_language):
-    # Create cache key with target language to handle multiple target languages
-    cache_key = f"{target_language}|{text}"
-    
-    # Check cache first
-    if cache_key in _translation_cache:
-        return _translation_cache[cache_key]
-    
-    # If not in cache, translate and store
-    translation = _get_translator().translate_text(text, target_lang=target_language)
-    translated_text = translation.text
-    _translation_cache[cache_key] = translated_text
-    return translated_text
-
-def fetch_and_parse(url):
-    response = requests.get(url)
-    html_content = response.text
-    soup = BeautifulSoup(html_content, 'lxml')
-    return soup
-
-def write_content(worksheet, start_row, col, content, translate=False, target_language=None):
-    row = start_row
-    if isinstance(content, str):
-        worksheet.write(row, col, content)
-        if translate:
-            translated_text = translate_text(content, target_language)
-            worksheet.write(row, col, translated_text)
-            row += 1
-        return start_row, row
-    else:
-        for item in content:
-            text = item.get_text().strip()
-            if text:
-                worksheet.write(row, col, text)
-                if translate:
-                    translated_text = translate_text(text, target_language)
-                    worksheet.write(row, col, translated_text)
-                row += 1
-        return start_row, row
-
-def create_translation_doc(company_name, all_urls, source_language, target_languages, progress_callback=None):
-    """Create translation document with DeepL translations"""
-    workbook = xlsxwriter.Workbook(f'{company_name}.xlsx')
-    bold = workbook.add_format({'bold': True})
-    
-    total_urls = len(all_urls)
-    current_progress = 10  # Start at 10% after initialization
-
-    worksheet = workbook.add_worksheet("Table of Contents")
-    row, col = 0, 0
-    sheet_counter = 2
-
-    # Table of contents
-    if progress_callback:
-        progress_callback(current_progress, "Creating table of contents...", "", "Organizing URLs...")
-    
-    for url in all_urls:
-        worksheet.write(row, col, url.address)
-        worksheet.write(row, col + 1, f"Sheet {sheet_counter}")
-        sheet_counter += 1
-        row += 1
-
-    # Process each URL
-    for i, url in enumerate(all_urls):
-        url_progress = 10 + (i * 80) // total_urls  # 10% to 90%
-        
-        if progress_callback:
-            progress_callback(url_progress, f"Processing URLs ({i+1} of {total_urls})", url.address, "Fetching page...")
-        
-        print(f'Working on: {url.address}')
-        soup = fetch_and_parse(url.address)
-        
-        if progress_callback:
-            progress_callback(url_progress + 2, f"Processing URLs ({i+1} of {total_urls})", url.address, "Parsing content...")
-        worksheet = workbook.add_worksheet()
-
-        # Add source language and target languages to the worksheet
-        worksheet.write('A1', url.address)
-        worksheet.write('A2', source_language)
-        for idx, target_language in enumerate(target_languages):
-            worksheet.write(1, idx + 1, target_language)
-
-        # Extract content from the main section of the HTML
-        site_content = soup.find('main')
-        title = soup.find('title')
-        meta = soup.find('meta', attrs={'name':'description'})
-        try:
-            meta_desc = meta['content']
-        except Exception as e:
-            meta_desc = "None"
-            print(f"Error: {e}")
-
-        headings = site_content.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']) if site_content else []
-        paragraphs = site_content.find_all('p') if site_content else []
-        lists = site_content.find_all('li') if site_content else []
-        # Gather elements in the same order as they appear on the page
-        ordered_elements = site_content.find_all(
-            ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li']
-        ) if site_content else []
-
-        #write title
-        if progress_callback:
-            progress_callback(url_progress + 4, f"Processing URLs ({i+1} of {total_urls})", url.address, "Writing content to Excel...")
-        
-        row = 3
-        worksheet.write(row, 0, 'Title Tag:', bold)
-        start_row = row + 1
-        _, row = write_content(worksheet, start_row, 0, title, False)
-        for idx, target_language in enumerate(target_languages):
-            if target_language == source_language:
-                continue
-            write_content(worksheet, start_row, idx + 1, title, True, target_language)
-
-        #write Meta Desc
-        row +=2
-        worksheet.write(row, 0, 'Meta Description', bold)
-        start_row = row + 1
-        _, row = write_content(worksheet, start_row, 0, meta_desc, False)
-        for idx, target_language in enumerate(target_languages):
-            if target_language == source_language:
-                continue
-            write_content(worksheet, start_row, idx + 1, meta_desc, True, target_language)
-
-        # Write content in document order (headings, paragraphs, list items)
-        row += 2
-        worksheet.write(row, 0, 'Content (ordered):', bold)
-        start_row = row + 1
-        row = start_row
-        for element in ordered_elements:
-            try:
-                text = element.get_text().strip()
-            except Exception:
-                text = ""
-            if not text:
-                continue
-            is_heading = hasattr(element, 'name') and element.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']
-            # Write source text with formatting if heading
-            if is_heading:
-                worksheet.write(row, 0, text, bold)
-            else:
-                worksheet.write(row, 0, text)
-            # Write translations in same row with matching formatting
-            for idx, target_language in enumerate(target_languages):
-                if target_language == source_language:
-                    continue
-                translated_text = translate_text(text, target_language)
-                if is_heading:
-                    worksheet.write(row, idx + 1, translated_text, bold)
-                else:
-                    worksheet.write(row, idx + 1, translated_text)
-            row += 1
-
-    if progress_callback:
-        progress_callback(95, "Finalizing document...", "", "Saving Excel file...")
-    
-    workbook.close()
-    print("Translation document created successfully!")
-    
-    if progress_callback:
-        progress_callback(100, "Translation complete!", "", "")
-    
-    return workbook
 
 class TranslationApp:
     def __init__(self, root):
@@ -310,7 +26,7 @@ class TranslationApp:
         
         # Set window to full width with reasonable height
         window_width = int(screen_width * .9)
-        window_height = screen_height  # Fixed reasonable height
+        window_height = screen_height
         
         self.root.geometry(f"{window_width}x{window_height}")
         self.root.minsize(800, 600)  # Prevent window from being too small
@@ -327,6 +43,9 @@ class TranslationApp:
         
         self.setup_ui()
         self.check_api_key_status()
+        
+        # Check for updates in background (non-blocking)
+        self.check_for_updates()
         
     def setup_ui(self):
         # Main frame
@@ -391,49 +110,10 @@ class TranslationApp:
         ttk.Label(self.language_frame, text="Source Language:").grid(row=0, column=0, sticky=tk.W, padx=(10, 10), pady=(10, 5))
         self.source_combo = ttk.Combobox(self.language_frame, textvariable=self.source_language, width=20)
         
-        # Language code to English name mapping (reused for source language)
-        language_names = {
-            'AR': 'Arabic',
-            'BG': 'Bulgarian',
-            'CS': 'Czech',
-            'ZH-HANS': 'Chinese (Simplified)',
-            'ZH-HANT': 'Chinese (Traditional)',
-            'DA': 'Danish',
-            'NL': 'Dutch',
-            'EN-GB': 'English (UK)',
-            'EN-US': 'English (US)',
-            'ET': 'Estonian',
-            'FI': 'Finnish',
-            'FR': 'French',
-            'DE': 'German',
-            'EL': 'Greek',
-            'HU': 'Hungarian',
-            'ID': 'Indonesian',
-            'IT': 'Italian',
-            'JA': 'Japanese',
-            'KO': 'Korean',
-            'LT': 'Lithuanian',
-            'LV': 'Latvian',
-            'NB': 'Norwegian (Bokmål)',
-            'PL': 'Polish',
-            'PT-PT': 'Portuguese (Portugal)',
-            'PT-BR': 'Portuguese (Brazil)',
-            'RO': 'Romanian',
-            'RU': 'Russian',
-            'SK': 'Slovak',
-            'SL': 'Slovenian',
-            'ES': 'Spanish',
-            'SV': 'Swedish',
-            'TH': 'Thai',
-            'TR': 'Turkish',
-            'UK': 'Ukrainian',
-            'VI': 'Vietnamese',
-        }
-        
         # Create display values for source language dropdown (using all available languages)
-        source_languages = list(language_names.keys())
+        source_languages = list(LANGUAGE_NAMES.keys())
         source_languages.sort()  # Sort alphabetically for better UX
-        source_display_values = [f"{lang} - {language_names[lang]}" for lang in source_languages]
+        source_display_values = [f"{lang} - {LANGUAGE_NAMES[lang]}" for lang in source_languages]
         self.source_combo['values'] = source_display_values
         self.source_combo.grid(row=0, column=1, sticky=tk.W, padx=(0, 10), pady=(10, 5))
         
@@ -443,7 +123,7 @@ class TranslationApp:
         
         # Target language checkboxes (using all available languages)
         self.target_vars = {}
-        languages = list(language_names.keys())
+        languages = list(LANGUAGE_NAMES.keys())
         languages.sort()  # Sort alphabetically for better UX
         
         for i, lang in enumerate(languages):
@@ -451,7 +131,7 @@ class TranslationApp:
             var.trace('w', self.on_target_language_change)
             self.target_vars[lang] = var
             # Display both code and English name
-            display_text = f"{lang} ({language_names[lang]})"
+            display_text = f"{lang} ({LANGUAGE_NAMES[lang]})"
             cb = ttk.Checkbutton(self.target_frame, text=display_text, variable=var)
             cb.grid(row=i//5, column=i%5, sticky=tk.W, padx=(0, 10))
         
@@ -508,6 +188,16 @@ class TranslationApp:
             self.has_api_key = False
         
         self.update_ui_for_mode()
+    
+    def check_for_updates(self):
+        """Check for app updates in background"""
+        def show_update_dialog_callback(latest_version, download_url):
+            """Show update dialog in main thread"""
+            def show():
+                show_update_dialog(self.root, latest_version, download_url)
+            self.root.after(0, show)
+        
+        check_for_updates(show_update_dialog_callback)
     
     def update_ui_for_mode(self):
         """Update UI based on whether API key is available"""
@@ -620,7 +310,6 @@ class TranslationApp:
                 self.update_progress(5, "Starting translation...", "", "Preparing output directory...")
                 
                 # Create output directory in user's Documents folder
-                import os.path
                 home_dir = os.path.expanduser("~")
                 output_dir = os.path.join(home_dir, "Documents", "Website-Translation-Tool-Outputs")
                 
@@ -657,7 +346,7 @@ class TranslationApp:
                         )
                     else:
                         # Create content-only document (no API key OR no target languages selected)
-                        self.create_content_only_doc(
+                        create_content_only_doc(
                             self.company_name.get().strip(),
                             url_objects,
                             self.get_source_language_code(),
@@ -739,7 +428,7 @@ class TranslationApp:
     def get_source_language_code(self):
         """Extract language code from the source language selection"""
         source_value = self.source_language.get()
-        # Extract just the language code (first 2 characters before the dash)
+        # Extract just the language code (first part before the dash)
         if ' - ' in source_value:
             return source_value.split(' - ')[0]
         return source_value
@@ -754,8 +443,6 @@ class TranslationApp:
     
     def change_api_key(self):
         """Allow user to change the DeepL API key"""
-        from tkinter import simpledialog
-        
         # Prompt for new API key
         new_key = simpledialog.askstring(
             "Change DeepL API Key",
@@ -774,11 +461,10 @@ class TranslationApp:
             return
         
         # Save new key to config
-        if _save_api_key(new_key):
+        if save_api_key(new_key):
             # Clear cached key and translator to force reload
-            global _CACHED_DEEPL_KEY, _translator
-            _CACHED_DEEPL_KEY = None
-            _translator = None
+            clear_cached_key()
+            clear_translator()
             
             # Update UI state
             self.check_api_key_status()
@@ -817,126 +503,13 @@ class TranslationApp:
     def select_none_urls(self):
         """Deselect all URLs in the listbox"""
         self.url_listbox.select_clear(0, tk.END)
-    
-    def create_content_only_doc(self, company_name, all_urls, source_language, progress_callback=None):
-        """Create Excel document with scraped content only (no translation)"""
-        import xlsxwriter
-        from bs4 import BeautifulSoup
-        import requests
-        
-        # Initialize workbook
-        workbook = xlsxwriter.Workbook(f'{company_name}_content_only.xlsx')
-        bold = workbook.add_format({'bold': True})
-        
-        total_urls = len(all_urls)
-        current_progress = 10  # Start at 10% after initialization
-        
-        # Table of contents
-        if progress_callback:
-            progress_callback(current_progress, "Creating table of contents...", "", "Organizing URLs...")
-        
-        worksheet = workbook.add_worksheet("Table of Contents")
-        row, col = 0, 0
-        sheet_counter = 2
 
-        for url in all_urls:
-            worksheet.write(row, col, url.address)
-            worksheet.write(row, col + 1, f"Sheet {sheet_counter}")
-            sheet_counter += 1
-            row += 1
-        
-        # Process each URL
-        for i, url in enumerate(all_urls):
-            url_progress = 10 + (i * 80) // total_urls  # 10% to 90%
-            
-            if progress_callback:
-                progress_callback(url_progress, f"Processing URLs ({i+1} of {total_urls})", url.address, "Fetching page...")
-            try:
-                # Fetch and parse the page
-                if progress_callback:
-                    progress_callback(url_progress + 2, f"Processing URLs ({i+1} of {total_urls})", url.address, "Parsing content...")
-                
-                response = requests.get(url.address)
-                html_content = response.text
-                soup = BeautifulSoup(html_content, 'lxml')
-                
-                worksheet = workbook.add_worksheet()
-                
-                # Add URL and language info
-                worksheet.write('A1', url.address)
-                worksheet.write('A2', f"Source Language: {source_language}")
-                
-                if progress_callback:
-                    progress_callback(url_progress + 4, f"Processing URLs ({i+1} of {total_urls})", url.address, "Writing content to Excel...")
-                
-                # Extract content from the main section
-                site_content = soup.find('main')
-                title = soup.find('title')
-                meta = soup.find('meta', attrs={'name':'description'})
-                
-                try:
-                    meta_desc = meta['content'] if meta else "None"
-                except:
-                    meta_desc = "None"
-                
-                # Get ordered elements
-                ordered_elements = site_content.find_all(
-                    ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li']
-                ) if site_content else []
-                
-                # Write title
-                row = 3
-                worksheet.write(row, 0, 'Title Tag:', bold)
-                start_row = row + 1
-                if title:
-                    worksheet.write(start_row, 0, title.get_text().strip())
-                
-                # Write meta description
-                row = start_row + 2
-                worksheet.write(row, 0, 'Meta Description:', bold)
-                start_row = row + 1
-                worksheet.write(start_row, 0, meta_desc)
-                
-                # Write content in document order
-                row = start_row + 2
-                worksheet.write(row, 0, 'Content (ordered):', bold)
-                start_row = row + 1
-                row = start_row
-                
-                for element in ordered_elements:
-                    try:
-                        text = element.get_text().strip()
-                    except:
-                        text = ""
-                    if not text:
-                        continue
-                    
-                    is_heading = hasattr(element, 'name') and element.name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']
-                    
-                    # Write text with formatting if heading
-                    if is_heading:
-                        worksheet.write(row, 0, text, bold)
-                    else:
-                        worksheet.write(row, 0, text)
-                    row += 1
-                    
-            except Exception as e:
-                print(f"Error processing {url.address}: {e}")
-                continue
-        
-        if progress_callback:
-            progress_callback(95, "Finalizing document...", "", "Saving Excel file...")
-        
-        workbook.close()
-        print("Content-only document created successfully!")
-        
-        if progress_callback:
-            progress_callback(100, "Content extraction complete!", "", "")
 
 def main():
     root = tk.Tk()
     app = TranslationApp(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()

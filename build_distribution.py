@@ -37,7 +37,7 @@ def build_executable():
         '--hidden-import=xlsxwriter',
         '--hidden-import=requests',
         '--hidden-import=pathlib',
-        'standalone_app.py'
+        'main.py'
     ]
     
     try:
@@ -151,8 +151,8 @@ def main():
     print("=" * 60)
     
     # Check if we're in the right directory
-    if not os.path.exists("standalone_app.py"):
-        print("❌ Error: standalone_app.py not found. Run this script from the project directory.")
+    if not os.path.exists("main.py"):
+        print("❌ Error: main.py not found. Run this script from the project directory.")
         sys.exit(1)
     
     # Clean previous builds

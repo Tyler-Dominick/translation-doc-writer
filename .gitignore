@@ -55,14 +55,28 @@ instance/
 *.db
 *.sqlite
 *.sqlite3
+translation_outputs/
+Website-Translation-Tool-Outputs/
 
+# Config files (may contain API keys)
+config.json
+*.config
+.env
+.env.local
+.website-translation-tool/
 
 # Distribution
 Website-Translation-Tool-Distribution/
+Website-Translation-Tool-macOS/
 *.zip
 *.dmg
 *.pkg
 *.app
+
+# PyInstaller build artifacts
+build/
+dist/
+# Note: .spec files are kept for consistent builds
 
 # Logs
 *.log
